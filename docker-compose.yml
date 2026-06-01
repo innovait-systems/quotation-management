@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  # =========================================================================
+  # BACKEND NESTJS SERVICE
+  # =========================================================================
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: quotation-server-prod
+    ports:
+      - "3001:3001"
+    environment:
+      - PORT=3001
+      - DATABASE_URL=file:./dev.db
+      - JWT_SECRET=supersecretenterprisekey_antigravity_2026
+      - SYSTEM_ADMIN_KEY=antigravity_master_sysadmin_secret_2026
+      - NODE_ENV=production
+    volumes:
+      - ./server/prisma:/app/prisma
+    restart: always
+
+  # =========================================================================
+  # FRONTEND NEXT.JS SERVICE
+  # =========================================================================
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+      args:
+        - NEXT_PUBLIC_API_URL=http://localhost:3001
+    container_name: quotation-client-prod
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - NODE_ENV=production
+    depends_on:
+      - server
+    restart: always

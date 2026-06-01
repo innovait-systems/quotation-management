@@ -1,0 +1,556 @@
+// datasource config
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+/// =========================================================================
+/// 1. TENANCY, GOVERNANCE & SUBSCRIPTIONS
+/// =========================================================================
+
+model Tenant {
+  id               String           @id @default(uuid())
+  name             String
+  slug             String           @unique
+  logoUrl          String?
+  brandingConfig   Json             // Global CSS injection, primary/secondary colors, fonts
+  currency         String           @default("USD")
+  timezone         String           @default("UTC")
+  taxConfig        Json             // Global VAT, GST tax brackets
+  numberingFormats Json             // Document prefix format mappings
+  plan             SubscriptionPlan @default(FREE)
+  status           TenantStatus     @default(ACTIVE)
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  // Multi-tenant references
+  users             User[]
+  customers         Customer[]
+  suppliers         Supplier[]
+  quotations        Quotation[]
+  purchaseOrders    PurchaseOrder[]
+  invoices          Invoice[]
+  services          Service[]
+  templates         Template[]
+  customFields      CustomField[]
+  workflowRules     WorkflowRule[]
+  quotaLimits       TenantQuota?
+  approvalTemplates ApprovalTemplate[]
+  auditLogs         AuditLog[]
+}
+
+enum SubscriptionPlan {
+  FREE
+  STARTUP
+  BUSINESS
+  ENTERPRISE
+}
+
+enum TenantStatus {
+  ACTIVE
+  SUSPENDED
+  DELETED
+}
+
+model TenantQuota {
+  id                 String   @id @default(uuid())
+  tenantId           String   @unique
+  tenant             Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  maxCustomFields    Int      @default(5)
+  maxMonthlyExports  Int      @default(10)
+  maxAiTokens        Int      @default(50000)
+  maxStorageBytes    BigInt   @default(524288000) // 500MB
+  maxWorkflowRuns    Int      @default(100)
+  usedCustomFields   Int      @default(0)
+  usedMonthlyExports Int      @default(0)
+  usedAiTokens       Int      @default(0)
+  usedStorageBytes   BigInt   @default(0)
+  usedWorkflowRuns   Int      @default(0)
+  quotaResetDate     DateTime
+  updatedAt          DateTime @updatedAt
+}
+
+model User {
+  id           String     @id @default(uuid())
+  tenantId     String
+  tenant       Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  email        String     @unique
+  passwordHash String
+  firstName    String
+  lastName     String
+  role         UserRole   @default(VIEWER)
+  isActive     Boolean    @default(true)
+  mfaEnabled   Boolean    @default(false)
+  mfaSecret    String?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  quotationsCreated Quotation[]
+  invoicesCreated   Invoice[]
+  approvalsAssigned ApprovalAssignment[]
+  auditLogs         AuditLog[]
+}
+
+enum UserRole {
+  SUPER_ADMIN
+  TENANT_ADMIN
+  FINANCE
+  SALES
+  OPERATIONS
+  VIEWER
+}
+
+/// =========================================================================
+/// 2. SYSTEM STAKEHOLDERS
+/// =========================================================================
+
+model Customer {
+  id              String      @id @default(uuid())
+  tenantId        String
+  tenant          Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name            String
+  companyName     String?
+  email           String
+  phone           String?
+  billingAddress  Json
+  shippingAddress Json
+  taxId           String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  quotations      Quotation[]
+  invoices        Invoice[]
+  services        Service[]
+}
+
+model Supplier {
+  id             String          @id @default(uuid())
+  tenantId       String
+  tenant         Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name           String
+  companyName    String
+  email          String
+  phone          String?
+  address        Json
+  taxId          String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  purchaseOrders PurchaseOrder[]
+}
+
+/// =========================================================================
+/// 3. METADATA VERSIONING ENGINE
+/// =========================================================================
+
+model CustomField {
+  id             String      @id @default(uuid())
+  tenantId       String
+  tenant         Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  entityType     EntityType
+  name           String      // Technical key (e.g., "sla_tier")
+  label          String      // Display label (e.g., "SLA Agreement Level")
+  type           FieldType
+  schemaVersion  Int         @default(1) // Snapshot versioning for backwards compatibility
+  isRequired     Boolean     @default(false)
+  defaultValue   String?
+  options        Json?       // Dropdown selection configurations
+  validationRules Json?      // Sandbox validation triggers
+  formula        String?     // Secure formula calculation expressions
+  visibilityRule Json?       // Dynamic form visibility dependencies
+  isActive       Boolean     @default(true)
+  sortOrder      Int         @default(0)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+}
+
+enum EntityType {
+  QUOTATION
+  PURCHASE_ORDER
+  INVOICE
+  SERVICE
+}
+
+enum FieldType {
+  TEXT
+  NUMBER
+  CURRENCY
+  DATE
+  DROPDOWN
+  MULTI_SELECT
+  CHECKBOX
+  RADIO
+  FORMULA
+  LOOKUP
+  FILE_UPLOAD
+  SIGNATURE
+  RICH_TEXT
+}
+
+/// =========================================================================
+/// 4. CORE DYNAMIC BUSINESS DOCUMENTS
+/// =========================================================================
+
+model Quotation {
+  id             String          @id @default(uuid())
+  tenantId       String
+  tenant         Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customerId     String
+  customer       Customer        @relation(fields: [customerId], references: [id])
+  creatorId      String
+  creator        User            @relation(fields: [creatorId], references: [id])
+  quoteNumber    String
+  version        Int             @default(1)
+  revisionOfId   String?
+  status         QuoteStatus     @default(DRAFT)
+  subTotal       Decimal
+  taxTotal       Decimal
+  discountTotal  Decimal
+  grandTotal     Decimal
+  validUntil     DateTime
+  terms          String?
+  dynamicValues  Json            // Key-Value map storing dynamic properties
+  metadataSchema Json            // Captured snapshot of the dynamic fields structure used during creation
+  templateVersion Int            @default(1)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  lines          QuoteLine[]
+  purchaseOrders PurchaseOrder[]
+  invoices       Invoice[]
+}
+
+enum QuoteStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  REJECTED
+  EXPIRED
+  CONVERTED
+  CLOSED
+}
+
+model QuoteLine {
+  id          String    @id @default(uuid())
+  quoteId     String
+  quote       Quotation @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  description String
+  quantity    Decimal
+  unitPrice   Decimal
+  taxRate     Decimal
+  discount    Decimal @default(0.00)
+  total       Decimal
+}
+
+/// Note: Partitioning Strategy: Partitioned on the database engine level via (created_at)
+model Invoice {
+  id             String        @id @default(uuid())
+  tenantId       String
+  tenant         Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customerId     String
+  customer       Customer      @relation(fields: [customerId], references: [id])
+  quotationId    String?
+  quotation      Quotation?    @relation(fields: [quotationId], references: [id])
+  creatorId      String
+  creator        User          @relation(fields: [creatorId], references: [id])
+  invoiceNumber  String
+  status         InvoiceStatus @default(DRAFT)
+  issueDate      DateTime
+  dueDate        DateTime
+  subTotal       Decimal
+  taxTotal       Decimal
+  discountTotal  Decimal
+  grandTotal     Decimal
+  balanceDue     Decimal
+  paymentQrCode  String?
+  dynamicValues  Json
+  metadataSchema Json          // Diagnostic historical metadata properties
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  lines          InvoiceLine[]
+}
+
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  PAID
+  PARTIALLY_PAID
+  OVERDUE
+  CANCELLED
+}
+
+model InvoiceLine {
+  id          String   @id @default(uuid())
+  invoiceId   String
+  invoice     Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  description String
+  quantity    Decimal
+  unitPrice   Decimal
+  taxRate     Decimal
+  discount    Decimal @default(0.00)
+  total       Decimal
+}
+
+model PurchaseOrder {
+  id             String        @id @default(uuid())
+  tenantId       String
+  tenant         Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  supplierId     String
+  supplier       Supplier      @relation(fields: [supplierId], references: [id])
+  quotationId    String?
+  quotation      Quotation?    @relation(fields: [quotationId], references: [id])
+  poNumber       String
+  status         POStatus      @default(OPEN)
+  subTotal       Decimal
+  taxTotal       Decimal
+  grandTotal     Decimal
+  deliveryTerms  String?
+  dynamicValues  Json
+  metadataSchema Json
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  lines          POLine[]
+}
+
+enum POStatus {
+  OPEN
+  APPROVED
+  PARTIALLY_RECEIVED
+  COMPLETED
+  CANCELLED
+}
+
+model POLine {
+  id              String        @id @default(uuid())
+  poId            String
+  po              PurchaseOrder @relation(fields: [poId], references: [id], onDelete: Cascade)
+  description     String
+  quantityOrdered Decimal
+  quantityReceived Decimal @default(0.00)
+  unitPrice       Decimal
+  taxRate         Decimal
+  total           Decimal
+}
+
+/// =========================================================================
+/// 5. 3-LAYER TEMPLATE SYSTEM
+/// =========================================================================
+
+model Template {
+  id             String     @id @default(uuid())
+  tenantId       String
+  tenant         Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name           String
+  entityType     EntityType
+  
+  // Refactored 3-Layer Schema
+  dataSchema     Json       // Layer 1: Expected JSON input structure mapping configuration
+  layoutConfig   Json       // Layer 2: Placement boundaries, grids, page layouts, size (A4, Letter)
+  themeConfig    Json       // Layer 3: Styling keys, typography, primary colors, watermarks
+  
+  htmlMarkup     String     // Core visual layout markup template (compiled at render time)
+  version        Int        @default(1)
+  isActive       Boolean    @default(true)
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+}
+
+/// =========================================================================
+/// 6. APPROVAL MATRIX ARCHITECTURE
+/// =========================================================================
+
+model ApprovalTemplate {
+  id             String          @id @default(uuid())
+  tenantId       String
+  tenant         Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name           String
+  entityType     EntityType
+  criteria       Json            // Amount threshold, department triggers (e.g. { "grandTotal": { "gt": 10000 } })
+  isActive       Boolean         @default(true)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  steps          ApprovalStep[]
+  runs           ApprovalRun[]
+}
+
+model ApprovalStep {
+  id                 String           @id @default(uuid())
+  approvalTemplateId String
+  template           ApprovalTemplate @relation(fields: [approvalTemplateId], references: [id], onDelete: Cascade)
+  stepSequence       Int              // Sequence weight (e.g. 1st, 2nd level)
+  assignedRole       UserRole?
+  assignedUserId     String?
+  escalationTimeout  Int?             // Timeout interval (minutes) before auto-routing
+  escalationRules    Json?            // Action to take on timeout
+  createdAt          DateTime         @default(now())
+}
+
+model ApprovalRun {
+  id                 String           @id @default(uuid())
+  approvalTemplateId String
+  template           ApprovalTemplate @relation(fields: [approvalTemplateId], references: [id], onDelete: Cascade)
+  entityId           String           // Reference ID of document being approved
+  status             ApprovalStatus   @default(PENDING)
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+
+  assignments        ApprovalAssignment[]
+  history            ApprovalHistory[]
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  ESCALATED
+}
+
+model ApprovalAssignment {
+  id            String         @id @default(uuid())
+  approvalRunId String
+  run           ApprovalRun    @relation(fields: [approvalRunId], references: [id], onDelete: Cascade)
+  assignedUserId String
+  assignedUser  User           @relation(fields: [assignedUserId], references: [id])
+  status        ActionStatus   @default(PENDING)
+  assignedAt    DateTime       @default(now())
+  respondedAt   DateTime?
+}
+
+enum ActionStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model ApprovalHistory {
+  id            String      @id @default(uuid())
+  approvalRunId String
+  run           ApprovalRun @relation(fields: [approvalRunId], references: [id], onDelete: Cascade)
+  userId        String
+  action        String      // "APPROVED", "REJECTED", "ESCALATED"
+  comments      String?
+  createdAt     DateTime    @default(now())
+}
+
+/// =========================================================================
+/// 7. SCALABLE WORKFLOW AUTOMATION PERSISTENCE
+/// =========================================================================
+
+model WorkflowRule {
+  id             String          @id @default(uuid())
+  tenantId       String
+  tenant         Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name           String
+  entityType     EntityType
+  triggerEvent   TriggerEvent
+  conditions     Json
+  actions        Json
+  version        Int             @default(1)
+  isActive       Boolean         @default(true)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  runs           WorkflowRun[]
+}
+
+enum TriggerEvent {
+  ON_CREATE
+  ON_STATUS_CHANGE
+  ON_DUE_DATE_WARNING
+}
+
+/// Note: Partitioning Strategy: Partitioned on the database engine level via (created_at)
+model WorkflowRun {
+  id             String          @id @default(uuid())
+  workflowRuleId String
+  rule           WorkflowRule    @relation(fields: [workflowRuleId], references: [id], onDelete: Cascade)
+  entityId       String
+  status         WorkflowStatus  @default(RUNNING)
+  startedAt      DateTime        @default(now())
+  endedAt        DateTime?
+
+  steps          WorkflowStepRun[]
+}
+
+enum WorkflowStatus {
+  RUNNING
+  SUCCESS
+  FAILED
+}
+
+model WorkflowStepRun {
+  id            String      @id @default(uuid())
+  workflowRunId String
+  run           WorkflowRun @relation(fields: [workflowRunId], references: [id], onDelete: Cascade)
+  actionName    String
+  status        StepStatus
+  errorMessage  String?
+  executionLogs String?
+  startedAt     DateTime    @default(now())
+  endedAt       DateTime?
+}
+
+enum StepStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  RETRYING
+}
+
+/// =========================================================================
+/// 8. DEDICATED SERVICE TRACKING SCHEMA
+/// =========================================================================
+
+model Service {
+  id             String        @id @default(uuid())
+  tenantId       String
+  tenant         Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customerId     String
+  customer       Customer      @relation(fields: [customerId], references: [id])
+  title          String
+  description    String
+  status         ServiceStatus @default(OPEN)
+  slaDeadline    DateTime
+  activities     Json          // Logs, historical interactions, updates
+  dynamicValues  Json
+  metadataSchema Json
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+}
+
+enum ServiceStatus {
+  OPEN
+  IN_PROGRESS
+  PENDING_CLIENT
+  COMPLETED
+  BREACHED
+}
+
+/// =========================================================================
+/// 9. COMPLIANCE & HISTORICAL PERFORMANCE AUDITING
+/// =========================================================================
+
+/// Note: Partitioning Strategy: Partitioned at the database level by partition key (created_at)
+model AuditLog {
+  id          String     @id @default(uuid())
+  tenantId    String
+  tenant      Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  userId      String?
+  user        User?      @relation(fields: [userId], references: [id])
+  action      String     // E.g., "INVOICE_PAID", "QUOTE_VERSIONED"
+  entityType  EntityType
+  entityId    String
+  oldState    Json?
+  newState    Json?
+  signature   String     // Tamper detection signature: SHA256(previousHash + action + tenantId + newState)
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime   @default(now())
+}
