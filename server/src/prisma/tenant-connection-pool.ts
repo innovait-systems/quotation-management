@@ -8,6 +8,7 @@ import * as path from 'path';
 export class TenantConnectionPool implements OnModuleDestroy {
   private readonly logger = new Logger(TenantConnectionPool.name);
   private readonly clients = new Map<string, PrismaClient>();
+  private readonly baseDatabaseUrl = process.env.DATABASE_URL;
 
   getTenantClient(context: TenantContextPayload | undefined): PrismaClient | null {
     if (!context) {
@@ -26,9 +27,52 @@ export class TenantConnectionPool implements OnModuleDestroy {
       return this.clients.get(slug)!;
     }
 
+    const isPg = this.baseDatabaseUrl?.startsWith('postgres') || this.baseDatabaseUrl?.startsWith('postgresql');
+
+    if (isPg) {
+      // In PostgreSQL (Supabase/Vercel production), we can deploy under shared database column-level filtering
+      // or dynamic separate PostgreSQL schemas.
+      const mode = process.env.MULTITENANT_MODE || 'shared';
+      if (mode === 'shared') {
+        this.logger.log(`PostgreSQL shared database mode active for ENTERPRISE tenant: "${slug}". Routing queries to the main shared database pool.`);
+        return null; // Returning null falls back to main client
+      }
+
+      this.logger.log(`Spinning up dedicated database connection pool for PostgreSQL ENTERPRISE tenant: "${slug}"`);
+
+      let tenantUrl = this.baseDatabaseUrl!;
+      try {
+        const urlObj = new URL(this.baseDatabaseUrl!);
+        urlObj.searchParams.set('schema', `enterprise_${slug}`);
+        tenantUrl = urlObj.toString();
+      } catch (err) {
+        this.logger.error(`Failed to parse base DATABASE_URL for Postgres schema tenant routing`, err);
+      }
+
+      const client = new PrismaClient({
+        datasources: {
+          db: {
+            url: tenantUrl,
+          },
+        },
+        log: [
+          { emit: 'stdout', level: 'error' },
+          { emit: 'stdout', level: 'info' },
+          { emit: 'stdout', level: 'warn' },
+        ],
+      });
+
+      client.$connect()
+        .then(() => this.logger.log(`Successfully connected dedicated database pool for PostgreSQL ENTERPRISE tenant: "${slug}" (schema: enterprise_${slug})`))
+        .catch((err) => this.logger.error(`Failed to establish connection for PostgreSQL ENTERPRISE tenant: "${slug}"`, err));
+
+      this.clients.set(slug, client);
+      return client;
+    }
+
+    // SQLite local dev fallback (remains unchanged and fully functional)
     this.logger.log(`Spinning up dedicated database connection pool for ENTERPRISE tenant: "${slug}"`);
 
-    // In SQLite local dev sandbox, copy schema and default seeds by copying dev.db
     const prismaDir = path.resolve(process.cwd(), 'prisma');
     const defaultDbPath = path.join(prismaDir, 'dev.db');
     const enterpriseDbPath = path.join(prismaDir, `dev-enterprise-${slug}.db`);
@@ -47,10 +91,6 @@ export class TenantConnectionPool implements OnModuleDestroy {
       }
     }
 
-    // Instantiate a new isolated PrismaClient using local programmatic constructor overrides.
-    // Since process.env.DATABASE_URL is permanently deleted during standard client boot,
-    // this local constructor option is perfectly and absolutely respected, entirely eliminating
-    // database connection race conditions under high concurrency.
     const client = new PrismaClient({
       datasources: {
         db: {
@@ -64,7 +104,6 @@ export class TenantConnectionPool implements OnModuleDestroy {
       ],
     });
 
-    // Make sure we connect it
     client.$connect()
       .then(() => this.logger.log(`Successfully connected dedicated database pool for ENTERPRISE tenant: "${slug}"`))
       .catch((err) => this.logger.error(`Failed to establish connection for ENTERPRISE tenant: "${slug}"`, err));
