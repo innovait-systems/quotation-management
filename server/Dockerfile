@@ -13,16 +13,16 @@ ENV PUPPETEER_SKIP_DOWNLOAD=true
 RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 
 # Copy packaging configuration files
-COPY package*.json ./
-COPY tsconfig*.json ./
-COPY nest-cli.json ./
-COPY prisma ./prisma/
+COPY server/package*.json ./
+COPY server/tsconfig*.json ./
+COPY server/nest-cli.json ./
+COPY server/prisma ./prisma/
 
 # Install dependencies using standard npm install to resolve lock file mismatches dynamically
 RUN npm install
 
 # Copy core source blueprints
-COPY src ./src
+COPY server/src ./src
 
 # Generate the type-safe Prisma client & compile NestJS application
 RUN npx prisma generate
