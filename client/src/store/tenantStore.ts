@@ -200,46 +200,6 @@ const createDefaultUsers = (tenantId: string): User[] => [
     role: 'SUPER_ADMIN',
     isActive: true,
     createdAt: new Date().toISOString(),
-  },
-  {
-    id: `user-${tenantId}-finance`,
-    tenantId,
-    firstName: 'Michael',
-    lastName: 'Burry',
-    email: 'finance@workspace.com',
-    role: 'FINANCE',
-    isActive: true,
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: `user-${tenantId}-sales`,
-    tenantId,
-    firstName: 'Jordan',
-    lastName: 'Belfort',
-    email: 'sales@workspace.com',
-    role: 'SALES',
-    isActive: true,
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: `user-${tenantId}-operations`,
-    tenantId,
-    firstName: 'Marcus',
-    lastName: 'Aurelius',
-    email: 'operations@workspace.com',
-    role: 'OPERATIONS',
-    isActive: true,
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: `user-${tenantId}-viewer`,
-    tenantId,
-    firstName: 'John',
-    lastName: 'Doe',
-    email: 'viewer@workspace.com',
-    role: 'VIEWER',
-    isActive: true,
-    createdAt: new Date().toISOString(),
   }
 ];
 
@@ -458,7 +418,7 @@ export const useTenantStore = create<TenantState>()(
     }),
 
     {
-      name: 'quotation-tenant-storage-v2',
+      name: 'quotation-tenant-storage-v3',
     }
   )
 );
