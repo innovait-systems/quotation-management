@@ -301,7 +301,7 @@ export const useTemplatesStore = create<TemplatesState>()(
       }
     }),
     {
-      name: 'quotation-templates-storage',
+      name: 'quotation-templates-storage-v2',
     }
   )
 );

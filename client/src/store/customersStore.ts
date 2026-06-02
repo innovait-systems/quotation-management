@@ -57,7 +57,7 @@ export const useCustomersStore = create<CustomersState>()(
       }
     }),
     {
-      name: 'quotation-customers-storage',
+      name: 'quotation-customers-storage-v2',
     }
   )
 );

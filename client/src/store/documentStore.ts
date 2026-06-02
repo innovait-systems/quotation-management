@@ -57,7 +57,7 @@ export const useDocumentStore = create<DocumentState>()(
       }))
     }),
     {
-      name: 'quotation-documents-storage'
+      name: 'quotation-documents-storage-v2'
     }
   )
 );

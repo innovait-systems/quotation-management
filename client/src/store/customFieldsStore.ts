@@ -219,7 +219,7 @@ export const useCustomFieldsStore = create<CustomFieldsState>()(
         .sort((a, b) => a.sortOrder - b.sortOrder),
     }),
     {
-      name: 'quotation-custom-fields-storage',
+      name: 'quotation-custom-fields-storage-v2',
       onRehydrateStorage: () => (state) => {
         if (state) {
           const missing = seedFields.filter(sf => !state.fields.some(f => f.id === sf.id));
