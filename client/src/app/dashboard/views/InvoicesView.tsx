@@ -588,12 +588,12 @@ export default function InvoicesView() {
                 const bank = activeTenant.bankDetails && activeTenant.bankDetails.accountNo
                   ? activeTenant.bankDetails
                   : {
-                      accountNo: '50200012345678',
-                      beneficiaryName: 'INNOVAIT SYSTEMS',
-                      bankName: 'HDFC Bank',
-                      ifscCode: 'HDFC0000123',
-                      swiftCode: 'HDFCINBBXXX',
-                      branch: 'Tirunelveli'
+                      accountNo: '—',
+                      beneficiaryName: '—',
+                      bankName: '—',
+                      ifscCode: '—',
+                      swiftCode: '—',
+                      branch: '—'
                     };
                 return (
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-xs">

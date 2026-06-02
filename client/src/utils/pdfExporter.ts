@@ -563,12 +563,12 @@ export function exportDocumentToPDF(doc: any, type: 'QUOTATION' | 'PURCHASE_ORDE
     const bank = activeTenant.bankDetails && activeTenant.bankDetails.accountNo
       ? activeTenant.bankDetails
       : {
-          accountNo: '50200012345678',
-          beneficiaryName: 'INNOVAIT SYSTEMS',
-          bankName: 'HDFC Bank',
-          ifscCode: 'HDFC0000123',
-          swiftCode: 'HDFCINBBXXX',
-          branch: 'Tirunelveli'
+          accountNo: '—',
+          beneficiaryName: '—',
+          bankName: '—',
+          ifscCode: '—',
+          swiftCode: '—',
+          branch: '—'
         };
 
     return `

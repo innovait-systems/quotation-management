@@ -182,12 +182,12 @@ export default function SettingsView() {
   const [showPaymentQR, setShowPaymentQR] = useState(true);
 
   // Bank Details States
-  const [bankAccountNo, setBankAccountNo] = useState(activeTenant.bankDetails?.accountNo || 'A/c No : 50200012345678');
-  const [bankBeneficiaryName, setBankBeneficiaryName] = useState(activeTenant.bankDetails?.beneficiaryName || 'INNOVAIT SYSTEMS');
-  const [bankName, setBankName] = useState(activeTenant.bankDetails?.bankName || 'HDFC Bank');
-  const [bankIfscCode, setBankIfscCode] = useState(activeTenant.bankDetails?.ifscCode || 'HDFC0000123');
-  const [bankSwiftCode, setBankSwiftCode] = useState(activeTenant.bankDetails?.swiftCode || 'HDFCINBBXXX');
-  const [bankBranch, setBankBranch] = useState(activeTenant.bankDetails?.branch || 'Tirunelveli');
+  const [bankAccountNo, setBankAccountNo] = useState(activeTenant.bankDetails?.accountNo || '');
+  const [bankBeneficiaryName, setBankBeneficiaryName] = useState(activeTenant.bankDetails?.beneficiaryName || '');
+  const [bankName, setBankName] = useState(activeTenant.bankDetails?.bankName || '');
+  const [bankIfscCode, setBankIfscCode] = useState(activeTenant.bankDetails?.ifscCode || '');
+  const [bankSwiftCode, setBankSwiftCode] = useState(activeTenant.bankDetails?.swiftCode || '');
+  const [bankBranch, setBankBranch] = useState(activeTenant.bankDetails?.branch || '');
 
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [activeSection, setActiveSection] = useState('organization');

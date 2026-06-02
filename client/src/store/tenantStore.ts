@@ -216,12 +216,12 @@ const mockTenants: Tenant[] = [
     address: '',
     authorizedPersons: [],
     bankDetails: {
-      accountNo: '50200012345678',
-      beneficiaryName: 'INNOVAIT SYSTEMS',
-      bankName: 'HDFC Bank',
-      ifscCode: 'HDFC0000123',
-      swiftCode: 'HDFCINBBXXX',
-      branch: 'Tirunelveli'
+      accountNo: '',
+      beneficiaryName: '',
+      bankName: '',
+      ifscCode: '',
+      swiftCode: '',
+      branch: ''
     },
     rolePermissions: { ...defaultRolePermissions }
   }
@@ -418,7 +418,7 @@ export const useTenantStore = create<TenantState>()(
     }),
 
     {
-      name: 'quotation-tenant-storage-v3',
+      name: 'quotation-tenant-storage-v4',
     }
   )
 );
