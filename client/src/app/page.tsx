@@ -65,7 +65,7 @@ export default function WelcomePortalGate() {
   const router = useRouter();
 
   // Form states
-  const [workspaceCode, setWorkspaceCode] = useState('default-workspace');
+  const [workspaceCode, setWorkspaceCode] = useState('innovait-systems');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('password');
   const [showPassword, setShowPassword] = useState(false);
@@ -229,7 +229,7 @@ export default function WelcomePortalGate() {
                       setWorkspaceCode(e.target.value);
                       setError(null);
                     }}
-                    placeholder="e.g. default-workspace"
+                    placeholder="e.g. innovait-systems"
                     className="w-full rounded-xl pl-11 pr-4 py-3.5 text-sm bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 focus:outline-none focus:ring-1 focus:ring-indigo-500 font-semibold text-slate-700 dark:text-zinc-300 placeholder:text-slate-400 dark:placeholder:text-zinc-500"
                   />
                 </div>
@@ -361,7 +361,7 @@ export default function WelcomePortalGate() {
                     Please enter a correct organization code to view its pre-seeded demo accounts.
                     <br />
                     <span className="font-mono text-indigo-500 dark:text-indigo-400 mt-1.5 block">
-                      Valid codes: "default-workspace", "spacex-cloud", "wayne-enterprises", "tesla-motors"
+                      Valid codes: "innovait-systems", "spacex-cloud", "wayne-enterprises", "tesla-motors"
                     </span>
                   </p>
                 </div>

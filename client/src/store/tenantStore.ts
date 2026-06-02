@@ -188,16 +188,16 @@ const defaultFeatures: TenantFeatures = {
   ai_copilot: true,
 };
 
-const defaultTenantId = 'tenant-default';
+const defaultTenantId = 'tenant-innovait';
 
 const createDefaultUsers = (tenantId: string): User[] => [
   {
     id: `user-${tenantId}-admin`,
     tenantId,
-    firstName: 'Sarah',
-    lastName: 'Connor',
-    email: 'admin@workspace.com',
-    role: 'TENANT_ADMIN',
+    firstName: 'InnovaIT',
+    lastName: 'Owner',
+    email: 'it@innovait-systems.com',
+    role: 'SUPER_ADMIN',
     isActive: true,
     createdAt: new Date().toISOString(),
   },
@@ -246,11 +246,11 @@ const createDefaultUsers = (tenantId: string): User[] => [
 const mockTenants: Tenant[] = [
   {
     id: defaultTenantId,
-    name: 'My New Workspace',
-    slug: 'default-workspace',
-    plan: 'FREE',
+    name: 'InnovaIT Systems',
+    slug: 'innovait-systems',
+    plan: 'ENTERPRISE',
     currency: 'USD',
-    brandingConfig: { primary: '#6366f1', secondary: '#4f46e5' },
+    brandingConfig: { primary: '#6366f1', secondary: '#0f172a' },
     features: { ...defaultFeatures },
     logoUrl: '',
     address: '',
