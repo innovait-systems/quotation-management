@@ -43,20 +43,20 @@ interface SidebarItem {
 }
 
 const sidebarItems: SidebarItem[] = [
-  { tab: 'DASHBOARD', label: 'Dashboard Hub', icon: LayoutDashboard, roles: ['SUPER_ADMIN', 'TENANT_ADMIN', 'FINANCE', 'SALES', 'OPERATIONS', 'VIEWER'] },
-  { tab: 'QUOTATIONS', label: 'Quotations', icon: FileText, roles: ['SUPER_ADMIN', 'TENANT_ADMIN', 'SALES', 'VIEWER'] },
-  { tab: 'PURCHASE_ORDERS', label: 'Purchase Orders', icon: ShoppingBag, roles: ['SUPER_ADMIN', 'TENANT_ADMIN', 'OPERATIONS', 'VIEWER'] },
-  { tab: 'INVOICES', label: 'Invoices Pipeline', icon: CreditCard, roles: ['SUPER_ADMIN', 'TENANT_ADMIN', 'FINANCE', 'VIEWER'] },
-  // Next Phase: { tab: 'SERVICES', label: 'Service SLAs', icon: Wrench, roles: ['SUPER_ADMIN', 'TENANT_ADMIN', 'OPERATIONS', 'VIEWER'] },
-  { tab: 'AGREEMENTS', label: 'Agreements & Docs', icon: Files, roles: ['SUPER_ADMIN', 'TENANT_ADMIN', 'SALES', 'FINANCE', 'OPERATIONS', 'VIEWER'] },
-  { tab: 'CUSTOMERS', label: 'Customers', icon: Users, roles: ['SUPER_ADMIN', 'TENANT_ADMIN', 'SALES', 'FINANCE', 'VIEWER'] },
-  { tab: 'TEMPLATES', label: 'Document Templates', icon: Printer, roles: ['SUPER_ADMIN', 'TENANT_ADMIN'] },
-  // Next Phase: { tab: 'AI_COPILOT', label: 'AI Workspace', icon: Sparkles, roles: ['SUPER_ADMIN', 'TENANT_ADMIN', 'SALES'] },
-  // Next Phase: { tab: 'COMPLIANCE', label: 'SOC2 Ledger', icon: ShieldCheck, roles: ['SUPER_ADMIN', 'TENANT_ADMIN'] },
-  { tab: 'COMPANIES', label: 'Organizations', icon: Building2, roles: ['SUPER_ADMIN', 'TENANT_ADMIN'] },
-  { tab: 'USERS', label: 'Team & Roles', icon: UserCog, roles: ['SUPER_ADMIN', 'TENANT_ADMIN'] },
-  { tab: 'SETTINGS', label: 'Settings', icon: Settings, roles: ['SUPER_ADMIN', 'TENANT_ADMIN'] },
-  { tab: 'SUBSCRIPTIONS', label: 'Subscriptions', icon: Wallet, roles: ['SUPER_ADMIN', 'TENANT_ADMIN'] }
+  { tab: 'DASHBOARD', label: 'Dashboard Hub', icon: LayoutDashboard, roles: ['TENANT_ADMIN', 'FINANCE', 'SALES', 'OPERATIONS', 'VIEWER'] },
+  { tab: 'QUOTATIONS', label: 'Quotations', icon: FileText, roles: ['TENANT_ADMIN', 'SALES', 'VIEWER'] },
+  { tab: 'PURCHASE_ORDERS', label: 'Purchase Orders', icon: ShoppingBag, roles: ['TENANT_ADMIN', 'OPERATIONS', 'VIEWER'] },
+  { tab: 'INVOICES', label: 'Invoices Pipeline', icon: CreditCard, roles: ['TENANT_ADMIN', 'FINANCE', 'VIEWER'] },
+  // Next Phase: { tab: 'SERVICES', label: 'Service SLAs', icon: Wrench, roles: ['TENANT_ADMIN', 'OPERATIONS', 'VIEWER'] },
+  { tab: 'AGREEMENTS', label: 'Agreements & Docs', icon: Files, roles: ['TENANT_ADMIN', 'SALES', 'FINANCE', 'OPERATIONS', 'VIEWER'] },
+  { tab: 'CUSTOMERS', label: 'Customers', icon: Users, roles: ['TENANT_ADMIN', 'SALES', 'FINANCE', 'VIEWER'] },
+  { tab: 'TEMPLATES', label: 'Document Templates', icon: Printer, roles: ['TENANT_ADMIN'] },
+  // Next Phase: { tab: 'AI_COPILOT', label: 'AI Workspace', icon: Sparkles, roles: ['TENANT_ADMIN', 'SALES'] },
+  // Next Phase: { tab: 'COMPLIANCE', label: 'SOC2 Ledger', icon: ShieldCheck, roles: ['TENANT_ADMIN'] },
+  { tab: 'COMPANIES', label: 'Organizations', icon: Building2, roles: ['SUPER_ADMIN'] },
+  { tab: 'USERS', label: 'Team & Roles', icon: UserCog, roles: ['TENANT_ADMIN'] },
+  { tab: 'SETTINGS', label: 'Settings', icon: Settings, roles: ['TENANT_ADMIN'] },
+  { tab: 'SUBSCRIPTIONS', label: 'Subscriptions', icon: Wallet, roles: ['TENANT_ADMIN'] }
 ];
 
 const ROLE_LABELS: Record<string, string> = {

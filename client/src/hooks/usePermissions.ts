@@ -4,8 +4,13 @@ export function usePermissions() {
   const { activeTenant, activeRole } = useTenantStore();
 
   const can = (resource: Resource, action: string): boolean => {
-    // If SUPER_ADMIN or TENANT_ADMIN, always return true
-    if (activeRole === 'SUPER_ADMIN' || activeRole === 'TENANT_ADMIN') {
+    // SUPER_ADMIN (SaaS owner) does not see confidential tenant business details (Quotes, Invoices, POs, Services)
+    if (activeRole === 'SUPER_ADMIN') {
+      return false;
+    }
+
+    // If TENANT_ADMIN, always return true
+    if (activeRole === 'TENANT_ADMIN') {
       return true;
     }
 

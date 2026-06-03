@@ -193,19 +193,106 @@ const defaultFeatures: TenantFeatures = {
 
 const defaultTenantId = 'tenant-innovait';
 
-const createDefaultUsers = (tenantId: string): User[] => [
-  {
-    id: `user-${tenantId}-admin`,
-    tenantId,
-    firstName: 'InnovaIT',
-    lastName: 'Owner',
-    email: 'it@innovait-systems.com',
-    role: 'SUPER_ADMIN',
-    isActive: true,
-    createdAt: new Date().toISOString(),
-    password: 'password',
+const createDefaultUsers = (tenantId: string): User[] => {
+  // If default administrative tenant, seed the SUPER_ADMIN
+  if (tenantId === defaultTenantId) {
+    return [
+      {
+        id: `user-${tenantId}-owner`,
+        tenantId,
+        firstName: 'InnovaIT',
+        lastName: 'Owner',
+        email: 'it@innovait-systems.com',
+        role: 'SUPER_ADMIN',
+        isActive: true,
+        createdAt: new Date().toISOString(),
+        password: 'password',
+      },
+      {
+        id: `user-${tenantId}-admin`,
+        tenantId,
+        firstName: 'InnovaIT',
+        lastName: 'Admin',
+        email: 'admin@innovait-systems.com',
+        role: 'TENANT_ADMIN',
+        isActive: true,
+        createdAt: new Date().toISOString(),
+        password: 'password',
+      },
+      {
+        id: `user-${tenantId}-finance`,
+        tenantId,
+        firstName: 'InnovaIT',
+        lastName: 'Finance',
+        email: 'finance@innovait-systems.com',
+        role: 'FINANCE',
+        isActive: true,
+        createdAt: new Date().toISOString(),
+        password: 'password',
+      }
+    ];
   }
-];
+
+  // For other tenants, seed the typical company roles
+  const slug = tenantId.replace('tenant-', '');
+  return [
+    {
+      id: `user-${tenantId}-admin`,
+      tenantId,
+      firstName: 'Company',
+      lastName: 'Admin',
+      email: `admin@${slug}.com`,
+      role: 'TENANT_ADMIN',
+      isActive: true,
+      createdAt: new Date().toISOString(),
+      password: 'password',
+    },
+    {
+      id: `user-${tenantId}-finance`,
+      tenantId,
+      firstName: 'Company',
+      lastName: 'Finance',
+      email: `finance@${slug}.com`,
+      role: 'FINANCE',
+      isActive: true,
+      createdAt: new Date().toISOString(),
+      password: 'password',
+    },
+    {
+      id: `user-${tenantId}-sales`,
+      tenantId,
+      firstName: 'Company',
+      lastName: 'Sales',
+      email: `sales@${slug}.com`,
+      role: 'SALES',
+      isActive: true,
+      createdAt: new Date().toISOString(),
+      password: 'password',
+    },
+    {
+      id: `user-${tenantId}-ops`,
+      tenantId,
+      firstName: 'Company',
+      lastName: 'Ops',
+      email: `ops@${slug}.com`,
+      role: 'OPERATIONS',
+      isActive: true,
+      createdAt: new Date().toISOString(),
+      password: 'password',
+    },
+    {
+      id: `user-${tenantId}-viewer`,
+      tenantId,
+      firstName: 'Company',
+      lastName: 'Viewer',
+      email: `viewer@${slug}.com`,
+      role: 'VIEWER',
+      isActive: true,
+      createdAt: new Date().toISOString(),
+      password: 'password',
+    }
+  ];
+};
 
 const mockTenants: Tenant[] = [
   {
@@ -336,6 +423,15 @@ export const useTenantStore = create<TenantState>()(
         };
         // Auto-provision default seeded users for the new workspace
         const newWorkspaceUsers = createDefaultUsers(newTenant.id);
+        
+        // If the current logged-in user is SUPER_ADMIN, preserve their session!
+        if (state.currentUser && state.currentUser.role === 'SUPER_ADMIN') {
+          return {
+            tenantsList: [...state.tenantsList, newTenant],
+            users: [...state.users, ...newWorkspaceUsers]
+          };
+        }
+
         const adminUser = newWorkspaceUsers[0];
         return {
           tenantsList: [...state.tenantsList, newTenant],
