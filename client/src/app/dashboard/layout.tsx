@@ -342,16 +342,30 @@ export default function DashboardLayout({
           </button>
         </nav>
 
-        {/* FOOTER INFO (TENANT SLUG) */}
+        {/* FOOTER INFO (TENANT SLUG & SUBSCRIPTION) */}
         {!sidebarCollapsed && (
-          <div className="p-6 border-t border-zinc-200/50 dark:border-zinc-800/40">
+          <div className="p-4 border-t border-zinc-200/50 dark:border-zinc-800/40 space-y-3">
             <div className="flex items-center gap-3">
-              <Building2 size={16} className="text-slate-400 dark:text-zinc-500" />
-              <div className="text-xs">
-                <p className="font-semibold text-slate-600 dark:text-zinc-400 uppercase tracking-widest">Workspace Slug</p>
-                <p className="text-slate-400 dark:text-zinc-500">/org/{activeTenant.slug}</p>
+              <Building2 size={16} className="text-slate-400 dark:text-zinc-500 shrink-0" />
+              <div className="text-xs min-w-0 flex-1">
+                <p className="font-semibold text-slate-650 dark:text-zinc-400 uppercase tracking-widest text-[9px]">Workspace Slug</p>
+                <p className="text-slate-400 dark:text-zinc-500 truncate">/org/{activeTenant.slug}</p>
               </div>
             </div>
+            {activeRole !== 'SUPER_ADMIN' && (
+              <div className="flex items-center gap-3">
+                <Wallet size={16} className="text-slate-400 dark:text-zinc-500 shrink-0" />
+                <div className="text-xs">
+                  <p className="font-semibold text-slate-650 dark:text-zinc-400 uppercase tracking-widest text-[9px]">Subscription</p>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <span className="font-bold text-slate-705 dark:text-zinc-300">{activeTenant.plan}</span>
+                    <span className="text-[10px] text-slate-400 dark:text-zinc-500">
+                      ({activeTenant.plan === 'FREE' ? '$0' : activeTenant.plan === 'STARTUP' ? '$99' : activeTenant.plan === 'BUSINESS' ? '$199' : '$499'}/mo)
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </aside>
@@ -491,6 +505,32 @@ export default function DashboardLayout({
                     </button>
                   </div>
 
+                  {/* Subscription Details Menu Item */}
+                  {activeRole !== 'SUPER_ADMIN' && (
+                    <div className="px-2 pb-2 border-b border-zinc-200/50 dark:border-zinc-800/40 mb-2">
+                      <button
+                        onClick={() => {
+                          setCurrentTab('SUBSCRIPTIONS');
+                          setUserDropdownOpen(false);
+                        }}
+                        className="flex w-full items-center gap-3 px-3 py-2 rounded-2xl text-left text-xs font-semibold text-slate-700 dark:text-zinc-300 hover:bg-zinc-100 hover:text-slate-900 dark:hover:bg-zinc-800/40 dark:hover:text-zinc-50 transition-all cursor-pointer"
+                      >
+                        <Wallet size={14} className="text-emerald-500 shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex justify-between items-center">
+                            <span className="truncate">SaaS Subscription</span>
+                            <span className="text-[9px] font-black uppercase text-emerald-600 bg-emerald-500/10 px-1.5 py-0.5 rounded shrink-0 ml-1">
+                              {activeTenant.plan}
+                            </span>
+                          </div>
+                          <p className="text-[10px] text-slate-450 dark:text-zinc-500 font-normal mt-0.5">
+                            Rate: {activeTenant.plan === 'FREE' ? '$0' : activeTenant.plan === 'STARTUP' ? '$99' : activeTenant.plan === 'BUSINESS' ? '$199' : '$499'}/mo
+                          </p>
+                        </div>
+                      </button>
+                    </div>
+                  )}
+
                   {/* Switch User Account section (Admin Only) */}
                   {(activeRole === 'TENANT_ADMIN' || activeRole === 'SUPER_ADMIN') ? (
                     <>
@@ -582,7 +622,14 @@ export default function DashboardLayout({
                 {`${currentUser.firstName.charAt(0)}${currentUser.lastName.charAt(0)}`.toUpperCase()}
               </div>
               <div className="hidden lg:block leading-tight">
-                <p className="text-sm font-bold text-slate-800 dark:text-zinc-200">{currentUser.firstName} {currentUser.lastName}</p>
+                <div className="flex items-center gap-1.5">
+                  <p className="text-sm font-bold text-slate-800 dark:text-zinc-200">{currentUser.firstName} {currentUser.lastName}</p>
+                  {activeRole !== 'SUPER_ADMIN' && (
+                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600 shrink-0">
+                      {activeTenant.plan}
+                    </span>
+                  )}
+                </div>
                 <p className="text-[10px] text-slate-400 dark:text-zinc-500 lowercase tracking-wider">{currentUser.email.toLowerCase()}</p>
               </div>
             </button>
