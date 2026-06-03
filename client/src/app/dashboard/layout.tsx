@@ -117,6 +117,20 @@ export default function DashboardLayout({
     }
   }, [isMounted, isAuthenticated, router]);
 
+  // Role-Based Redirection Guard: Ensure active tab is allowed for the user's role
+  React.useEffect(() => {
+    if (!isMounted || !isAuthenticated) return;
+
+    const isTabAllowed = sidebarItems.find(item => item.tab === currentTab && item.roles.includes(activeRole));
+    if (!isTabAllowed) {
+      // Find the first allowed tab for this role
+      const firstAllowedItem = sidebarItems.find(item => item.roles.includes(activeRole));
+      if (firstAllowedItem) {
+        setCurrentTab(firstAllowedItem.tab);
+      }
+    }
+  }, [isMounted, isAuthenticated, activeRole, currentTab, setCurrentTab]);
+
   // Filter users for the current workspace
   const tenantUsers = users.filter(u => u.tenantId === activeTenant.id && u.isActive);
 
