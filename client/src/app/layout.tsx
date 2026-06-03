@@ -16,7 +16,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Antigravity Solutions | SaaS Operations Framework",
+  title: "Innovait Q2I | SaaS Operations Platform",
   description: "Enterprise operations metadata engine for managing quotations, POs, invoices, and automated workflows.",
 };
 

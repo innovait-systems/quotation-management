@@ -281,7 +281,7 @@ export default function DashboardLayout({
             </div>
             {!sidebarCollapsed && (
               <span className="font-bold text-lg tracking-tight bg-gradient-to-r from-slate-950 via-primary to-indigo-600 bg-clip-text text-transparent dark:from-zinc-50 dark:to-zinc-400">
-                Antigravity
+                Innovait Q2I
               </span>
             )}
           </div>

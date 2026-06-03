@@ -167,7 +167,7 @@ export default function WelcomePortalGate() {
             Λ
           </div>
           <span className="font-extrabold text-lg tracking-tight bg-gradient-to-r from-slate-950 via-primary to-indigo-600 bg-clip-text text-transparent dark:from-zinc-50 dark:to-zinc-400">
-            Antigravity
+            Innovait Q2I
           </span>
         </div>
 
@@ -203,7 +203,7 @@ export default function WelcomePortalGate() {
         </div>
 
         <footer className="text-xs text-slate-400 dark:text-zinc-600 font-mono">
-          Antigravity B2B Framework Core &bull; Secure Protocol Locked
+          Innovait Q2I B2B Framework Core &bull; Secure Protocol Locked
         </footer>
       </div>
 
