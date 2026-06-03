@@ -58,7 +58,7 @@ export default function UserProfilePanel({ open, onClose }: UserProfilePanelProp
       setPasswordSuccess(false);
       setPasswordError(null);
     }
-  }, [open, currentUser]);
+  }, [open]);
 
   const handleUpdateProfile = (e: React.FormEvent) => {
     e.preventDefault();
