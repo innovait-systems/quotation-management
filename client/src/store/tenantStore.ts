@@ -664,7 +664,7 @@ export const useTenantStore = create<TenantState>()(
     }),
 
     {
-      name: 'quotation-tenant-storage-v4',
+      name: 'quotation-tenant-storage-v5',
     }
   )
 );

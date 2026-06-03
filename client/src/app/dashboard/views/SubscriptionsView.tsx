@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useTenantStore } from '../../../store/tenantStore';
+import { useTenantStore, defaultSubscriptionPlans } from '../../../store/tenantStore';
 import { Check, AlertTriangle, Wallet, Zap, ArrowUpRight, Receipt, CalendarClock } from 'lucide-react';
 import { useDashboardStore, ActivityLog } from '../../../store/dashboardStore';
 
@@ -11,6 +11,7 @@ export default function SubscriptionsView() {
   const [logs, setLogs] = useState<ActivityLog[]>([]);
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
 
+  const plans = (subscriptionPlans && subscriptionPlans.length) ? subscriptionPlans : defaultSubscriptionPlans;
   const activePlan = activeTenant.plan;
 
   const handleUpgradePlan = (planKey: string) => {
@@ -28,7 +29,7 @@ export default function SubscriptionsView() {
     setLogs(prev => [newLog, ...prev]);
   };
 
-  const matchedActivePlan = subscriptionPlans.find(p => p.key === activePlan) || subscriptionPlans[0];
+  const matchedActivePlan = plans.find(p => p.key === activePlan) || plans[0];
 
   const limits = {
     fields: matchedActivePlan.maxCustomFields,
@@ -155,7 +156,7 @@ export default function SubscriptionsView() {
       <div>
         <h3 className="text-lg font-bold text-slate-800 dark:text-zinc-100 mb-6">Select Subscription Tier Plan</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {subscriptionPlans.map(plan => {
+          {plans.map(plan => {
             const isFree = plan.key === 'FREE';
             const priceVal = billingCycle === 'monthly' ? `$${plan.priceMonthly}` : `$${plan.priceAnnually}`;
             const isCurrentlyActive = activePlan === plan.key;

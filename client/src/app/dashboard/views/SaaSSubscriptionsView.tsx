@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useTenantStore, SubscriptionPlanItem } from '../../../store/tenantStore';
+import { useTenantStore, SubscriptionPlanItem, defaultSubscriptionPlans } from '../../../store/tenantStore';
 import { useDashboardStore } from '../../../store/dashboardStore';
 import StatCard from '../../../components/ui/StatCard';
 import SlidePanel from '../../../components/ui/SlidePanel';
@@ -20,6 +20,8 @@ export default function SaaSSubscriptionsView() {
     deleteSubscriptionPlan 
   } = useTenantStore();
 
+  const plans = (subscriptionPlans && subscriptionPlans.length) ? subscriptionPlans : defaultSubscriptionPlans;
+
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlanItem | null>(null);
@@ -37,13 +39,13 @@ export default function SaaSSubscriptionsView() {
   const [formFeaturesText, setFormFeaturesText] = useState('');
 
   // Statistics
-  const totalPlans = subscriptionPlans.length;
-  const customTiers = subscriptionPlans.filter(p => !['FREE', 'STARTUP', 'BUSINESS', 'ENTERPRISE'].includes(p.key)).length;
+  const totalPlans = plans.length;
+  const customTiers = plans.filter(p => !['FREE', 'STARTUP', 'BUSINESS', 'ENTERPRISE'].includes(p.key)).length;
   
   // Calculate dynamic MRR by mapping tenants to active plan monthly costs
   const calculateMRR = () => {
     return tenantsList.reduce((sum, tenant) => {
-      const matchedPlan = subscriptionPlans.find(p => p.key === tenant.plan);
+      const matchedPlan = plans.find(p => p.key === tenant.plan);
       return sum + (matchedPlan ? matchedPlan.priceMonthly : 0);
     }, 0);
   };
@@ -186,7 +188,7 @@ export default function SaaSSubscriptionsView() {
       <div>
         <h2 className="text-lg font-bold text-slate-800 dark:text-zinc-100 mb-6">Active Subscription Tiers List</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {subscriptionPlans.map((plan) => {
+          {plans.map((plan) => {
             const isSystemDefault = ['FREE', 'STARTUP', 'BUSINESS', 'ENTERPRISE'].includes(plan.key);
             const assignedCount = tenantsList.filter(t => t.plan === plan.key).length;
             

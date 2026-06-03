@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useTenantStore, Tenant, TenantFeatures } from '../../../store/tenantStore';
+import { useTenantStore, Tenant, TenantFeatures, defaultSubscriptionPlans } from '../../../store/tenantStore';
 import StatCard from '../../../components/ui/StatCard';
 import DataTable, { Column } from '../../../components/ui/DataTable';
 import SlidePanel from '../../../components/ui/SlidePanel';
@@ -57,7 +57,21 @@ export default function CompaniesView() {
     subscriptionPlans
   } = useTenantStore();
 
-  const selectedPlanData = subscriptionPlans.find(p => p.key === formPlan);
+  // Form states (common for create and edit) - declared first to prevent ReferenceError
+  const [formName, setFormName] = useState('');
+  const [formSlug, setFormSlug] = useState('');
+  const [formPlan, setFormPlan] = useState<'FREE' | 'STARTUP' | 'BUSINESS' | 'ENTERPRISE'>('FREE');
+  const [formCurrency, setFormCurrency] = useState('USD');
+  const [formEmail, setFormEmail] = useState('');
+  const [formAddress, setFormAddress] = useState('');
+  const [formGstNumber, setFormGstNumber] = useState('');
+  const [formPrimaryColor, setFormPrimaryColor] = useState('#6366f1');
+  const [formSecondaryColor, setFormSecondaryColor] = useState('#0f172a');
+  const [formFeatures, setFormFeatures] = useState<TenantFeatures>({ ...DEFAULT_FEATURES });
+
+  // Safe fallback to prevent hydration or empty store array TypeError crashes
+  const plans = (subscriptionPlans && subscriptionPlans.length) ? subscriptionPlans : defaultSubscriptionPlans;
+  const selectedPlanData = plans.find(p => p.key === formPlan);
 
   // User creation inside selected company
   const [newUserName, setNewUserName] = useState('');
@@ -72,18 +86,6 @@ export default function CompaniesView() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
 
-  // Form states (common for create and edit)
-  const [formName, setFormName] = useState('');
-  const [formSlug, setFormSlug] = useState('');
-  const [formPlan, setFormPlan] = useState<'FREE' | 'STARTUP' | 'BUSINESS' | 'ENTERPRISE'>('FREE');
-  const [formCurrency, setFormCurrency] = useState('USD');
-  const [formEmail, setFormEmail] = useState('');
-  const [formAddress, setFormAddress] = useState('');
-  const [formGstNumber, setFormGstNumber] = useState('');
-  const [formPrimaryColor, setFormPrimaryColor] = useState('#6366f1');
-  const [formSecondaryColor, setFormSecondaryColor] = useState('#0f172a');
-  const [formFeatures, setFormFeatures] = useState<TenantFeatures>({ ...DEFAULT_FEATURES });
-
   // Statistics
   const totalCount = tenantsList.length;
   const enterpriseCount = tenantsList.filter(t => t.plan === 'ENTERPRISE').length;
@@ -92,7 +94,7 @@ export default function CompaniesView() {
 
   const calculateMRR = (tenants: Tenant[]) => {
     return tenants.reduce((sum, t) => {
-      const plan = subscriptionPlans.find(p => p.key === t.plan);
+      const plan = plans.find(p => p.key === t.plan);
       return sum + (plan ? plan.priceMonthly : 0);
     }, 0);
   };
@@ -500,7 +502,7 @@ export default function CompaniesView() {
                 onChange={(e) => setFormPlan(e.target.value as any)}
                 className="w-full rounded-xl px-3 py-2.5 text-sm bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 focus:outline-none font-semibold text-slate-700 dark:text-zinc-300"
               >
-                {subscriptionPlans.map(plan => (
+                {plans.map(plan => (
                   <option key={plan.key} value={plan.key}>{plan.name} ({plan.key})</option>
                 ))}
               </select>
@@ -719,7 +721,7 @@ export default function CompaniesView() {
                   onChange={(e) => setFormPlan(e.target.value as any)}
                   className="w-full rounded-xl px-3 py-2.5 text-sm bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 focus:outline-none font-semibold text-slate-700 dark:text-zinc-300"
                 >
-                  {subscriptionPlans.map(plan => (
+                  {plans.map(plan => (
                     <option key={plan.key} value={plan.key}>{plan.name} ({plan.key})</option>
                   ))}
                 </select>
