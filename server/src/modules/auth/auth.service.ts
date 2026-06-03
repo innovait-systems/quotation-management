@@ -18,10 +18,23 @@ export class AuthService {
   async login(body: { email: string; passwordHash: string; tenantSlug?: string }) {
     const { email, passwordHash, tenantSlug } = body;
 
-    // 1. Resolve active tenant by slug
-    const tenant = await this.prisma.tenant.findUnique({
-      where: tenantSlug ? { slug: tenantSlug } : { slug: 'antigravity' },
-    });
+    // 1. Resolve active tenant by slug or ID
+    let tenant = null;
+    if (tenantSlug) {
+      if (tenantSlug.length === 36 || tenantSlug.startsWith('tenant-')) {
+        tenant = await this.prisma.tenant.findUnique({
+          where: { id: tenantSlug },
+        });
+      } else {
+        tenant = await this.prisma.tenant.findUnique({
+          where: { slug: tenantSlug },
+        });
+      }
+    } else {
+      tenant = await this.prisma.tenant.findUnique({
+        where: { slug: 'antigravity' },
+      });
+    }
 
     if (!tenant) {
       throw new UnauthorizedException('Access Denied: Invalid tenant context.');

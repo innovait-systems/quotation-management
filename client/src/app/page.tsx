@@ -108,7 +108,7 @@ export default function WelcomePortalGate() {
     const targetCode = loginMode === 'SAAS_OWNER' ? 'innovait-systems' : workspaceCode.trim();
 
     // Simulate network authentication speed
-    setTimeout(() => {
+    setTimeout(async () => {
       const matched = tenantsList.find(
         t => t.slug.toLowerCase() === targetCode.toLowerCase() ||
              t.id.toLowerCase() === targetCode.toLowerCase()
@@ -120,7 +120,7 @@ export default function WelcomePortalGate() {
         return;
       }
 
-      const success = login(email.trim().toLowerCase(), matched.id, password);
+      const success = await login(email.trim().toLowerCase(), matched.id, password);
       if (success) {
         // Apply success animation and redirect
         router.push('/dashboard');
@@ -139,8 +139,8 @@ export default function WelcomePortalGate() {
     setEmail(selectedUser.email);
     setPassword('password');
 
-    setTimeout(() => {
-      const success = login(selectedUser.email, targetTenantId, selectedUser.password || 'password');
+    setTimeout(async () => {
+      const success = await login(selectedUser.email, targetTenantId, selectedUser.password || 'password');
       if (success) {
         router.push('/dashboard');
       } else {

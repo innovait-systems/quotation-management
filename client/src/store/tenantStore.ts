@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { apiRequest } from '../utils/apiClient';
 
 export interface TenantBranding {
   primary: string;
@@ -164,7 +165,7 @@ interface TenantState {
   activeRole: UserRole;
   users: User[];
   isAuthenticated: boolean;
-  login: (email: string, tenantId: string, password?: string) => boolean;
+  login: (email: string, tenantId: string, password?: string) => Promise<boolean>;
   logout: () => void;
   setActiveTenant: (tenantId: string) => void;
   toggleTenantFeature: (featureId: keyof TenantFeatures) => void;
@@ -405,26 +406,50 @@ export const useTenantStore = create<TenantState>()(
       users: defaultUsersList,
       isAuthenticated: false,
 
-      login: (email, tenantId, password) => {
-        const state = get();
-        const user = state.users.find(
-          (u) => u.email.toLowerCase() === email.toLowerCase().trim() && u.tenantId === tenantId && u.isActive
-        );
-        const tenant = state.tenantsList.find((t) => t.id === tenantId);
-        const userPassword = user?.password || 'password';
-        if (user && tenant && (!password || userPassword === password)) {
-          set({
-            currentUser: user,
-            activeRole: user.role,
-            activeTenant: tenant,
-            isAuthenticated: true,
+      login: async (email, tenantId, password) => {
+        try {
+          const res = await apiRequest('/api/v1/auth/login', {
+            method: 'POST',
+            body: JSON.stringify({
+              email: email.trim().toLowerCase(),
+              passwordHash: password || 'password',
+              tenantSlug: tenantId,
+            }),
           });
-          return true;
+          
+          if (res.accessToken) {
+            if (typeof window !== 'undefined') {
+              localStorage.setItem('innovait-auth-token', res.accessToken);
+            }
+            
+            const tenantWithFeatures = {
+              ...res.tenant,
+              brandingConfig: res.tenant.brandingConfig || { primary: '#6366f1', secondary: '#0f172a' },
+              features: res.tenant.features || defaultFeatures,
+              rolePermissions: res.tenant.rolePermissions || defaultRolePermissions,
+            };
+
+            set({
+              currentUser: res.user,
+              activeRole: res.user.role,
+              activeTenant: tenantWithFeatures,
+              isAuthenticated: true,
+            });
+            return true;
+          }
+          return false;
+        } catch (err) {
+          console.error('Login error:', err);
+          return false;
         }
-        return false;
       },
 
-      logout: () => set({ isAuthenticated: false }),
+      logout: () => {
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('innovait-auth-token');
+        }
+        set({ isAuthenticated: false });
+      },
 
       setActiveTenant: (tenantId) => set((state) => {
         const tenant = state.tenantsList.find((t) => t.id === tenantId);
