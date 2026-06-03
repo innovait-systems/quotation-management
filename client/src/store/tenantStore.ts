@@ -139,7 +139,25 @@ export interface User {
   password?: string;
 }
 
+export interface SubscriptionPlanItem {
+  id: string;
+  key: string;
+  name: string;
+  priceMonthly: number;
+  priceAnnually: number;
+  maxCustomFields: number;
+  maxMonthlyExports: number;
+  maxAiTokens: string;
+  maxWorkflowRuns: number;
+  description: string;
+  features: string[];
+}
+
 interface TenantState {
+  subscriptionPlans: SubscriptionPlanItem[];
+  addSubscriptionPlan: (plan: Omit<SubscriptionPlanItem, 'id'>) => void;
+  updateSubscriptionPlan: (planId: string, updates: Partial<SubscriptionPlanItem>) => void;
+  deleteSubscriptionPlan: (planId: string) => void;
   activeTenant: Tenant;
   tenantsList: Tenant[];
   currentUser: User;
@@ -321,9 +339,65 @@ const mockTenants: Tenant[] = [
 const defaultUsersList = createDefaultUsers(defaultTenantId);
 const defaultAdminUser = defaultUsersList[0];
 
+export const defaultSubscriptionPlans: SubscriptionPlanItem[] = [
+  {
+    id: 'plan-free',
+    key: 'FREE',
+    name: 'Starter Sandbox',
+    priceMonthly: 0,
+    priceAnnually: 0,
+    maxCustomFields: 5,
+    maxMonthlyExports: 10,
+    maxAiTokens: '50k',
+    maxWorkflowRuns: 100,
+    description: 'Ideal for baseline B2B sandboxing & testing.',
+    features: ['Max 5 custom fields', '10 PDF monthly exports', 'Default brand presets']
+  },
+  {
+    id: 'plan-startup',
+    key: 'STARTUP',
+    name: 'Growth Startup',
+    priceMonthly: 99,
+    priceAnnually: 79,
+    maxCustomFields: 15,
+    maxMonthlyExports: 50,
+    maxAiTokens: '200k',
+    maxWorkflowRuns: 500,
+    description: 'For growing companies with custom styling.',
+    features: ['Max 15 custom fields', '50 PDF/Excel exports', 'Custom branding layout', '200k monthly AI tokens']
+  },
+  {
+    id: 'plan-business',
+    key: 'BUSINESS',
+    name: 'Enterprise Lite',
+    priceMonthly: 199,
+    priceAnnually: 159,
+    maxCustomFields: 50,
+    maxMonthlyExports: 250,
+    maxAiTokens: '1M',
+    maxWorkflowRuns: 2500,
+    description: 'Advanced integrations, PDF templates & AI copilot.',
+    features: ['Max 50 custom fields', '250 exports / formulas', 'Automated custom rules', '1M monthly AI tokens']
+  },
+  {
+    id: 'plan-enterprise',
+    key: 'ENTERPRISE',
+    name: 'Unlimited Corp',
+    priceMonthly: 499,
+    priceAnnually: 399,
+    maxCustomFields: 999,
+    maxMonthlyExports: 9999,
+    maxAiTokens: '100M',
+    maxWorkflowRuns: 99999,
+    description: 'Full enterprise capacity with SOC2 audits & compliance logs.',
+    features: ['Unlimited custom properties', 'Unlimited PDF / Excel reports', 'Cryptographic SOC2 Audits', '100M custom AI tokens']
+  }
+];
+
 export const useTenantStore = create<TenantState>()(
   persist(
     (set, get) => ({
+      subscriptionPlans: defaultSubscriptionPlans,
       activeTenant: mockTenants[0],
       tenantsList: mockTenants,
       currentUser: defaultAdminUser,
@@ -565,6 +639,24 @@ export const useTenantStore = create<TenantState>()(
           activeRole: user.role,
         };
       }),
+
+      addSubscriptionPlan: (planData) => set((state) => {
+        const newPlan: SubscriptionPlanItem = {
+          ...planData,
+          id: `plan-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+        };
+        return {
+          subscriptionPlans: [...state.subscriptionPlans, newPlan]
+        };
+      }),
+
+      updateSubscriptionPlan: (planId, updates) => set((state) => ({
+        subscriptionPlans: state.subscriptionPlans.map(p => p.id === planId ? { ...p, ...updates } : p)
+      })),
+
+      deleteSubscriptionPlan: (planId) => set((state) => ({
+        subscriptionPlans: state.subscriptionPlans.filter(p => p.id !== planId)
+      })),
 
       getUsersForTenant: (tenantId) => {
         return get().users.filter(u => u.tenantId === tenantId);

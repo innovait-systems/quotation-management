@@ -6,15 +6,15 @@ import { Check, AlertTriangle, Wallet, Zap, ArrowUpRight, Receipt, CalendarClock
 import { useDashboardStore, ActivityLog } from '../../../store/dashboardStore';
 
 export default function SubscriptionsView() {
-  const { activeTenant } = useTenantStore();
+  const { activeTenant, subscriptionPlans, updateTenant } = useTenantStore();
   const { setCurrentTab } = useDashboardStore();
   const [logs, setLogs] = useState<ActivityLog[]>([]);
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
 
   const activePlan = activeTenant.plan;
 
-  const handleUpgradePlan = (plan: 'FREE' | 'STARTUP' | 'BUSINESS' | 'ENTERPRISE') => {
-    activeTenant.plan = plan;
+  const handleUpgradePlan = (planKey: string) => {
+    updateTenant(activeTenant.id, { plan: planKey as any });
     const now = new Date();
     const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
     const newLog: ActivityLog = {
@@ -22,16 +22,20 @@ export default function SubscriptionsView() {
       timestamp: timeStr,
       user: 'Rajesh S. (Admin)',
       action: 'Upgrade Plan Tier',
-      impact: `Subscription plan upgraded to ${plan} tier (Quota limits reset)`,
+      impact: `Subscription plan upgraded to ${planKey} tier (Quota limits reset)`,
       color: 'text-indigo-500'
     };
     setLogs(prev => [newLog, ...prev]);
   };
 
-  const limits = activePlan === 'FREE' ? { fields: 5, exports: 10, ai: '50k', runs: 100 }
-    : activePlan === 'STARTUP' ? { fields: 15, exports: 50, ai: '200k', runs: 500 }
-    : activePlan === 'BUSINESS' ? { fields: 50, exports: 250, ai: '1M', runs: 2500 }
-    : { fields: 999, exports: 9999, ai: '100M', runs: 99999 };
+  const matchedActivePlan = subscriptionPlans.find(p => p.key === activePlan) || subscriptionPlans[0];
+
+  const limits = {
+    fields: matchedActivePlan.maxCustomFields,
+    exports: matchedActivePlan.maxMonthlyExports,
+    ai: matchedActivePlan.maxAiTokens,
+    runs: matchedActivePlan.maxWorkflowRuns
+  };
 
   const usage = { fields: 4, exports: 6, ai: '12k', runs: 42 };
 
@@ -85,7 +89,7 @@ export default function SubscriptionsView() {
           </div>
           <div className="text-right">
             <p className="text-3xl font-black text-slate-900 dark:text-zinc-50">
-              {activePlan === 'FREE' ? '$0' : activePlan === 'STARTUP' ? (billingCycle === 'monthly' ? '$49' : '$39') : activePlan === 'BUSINESS' ? (billingCycle === 'monthly' ? '$199' : '$159') : (billingCycle === 'monthly' ? '$499' : '$399')}
+              {billingCycle === 'monthly' ? `$${matchedActivePlan.priceMonthly}` : `$${matchedActivePlan.priceAnnually}`}
               <span className="text-xs font-semibold text-slate-400">/mo</span>
             </p>
             {billingCycle === 'annual' && activePlan !== 'FREE' && (
@@ -150,43 +154,76 @@ export default function SubscriptionsView() {
       {/* PRICING PLANS */}
       <div>
         <h3 className="text-lg font-bold text-slate-800 dark:text-zinc-100 mb-6">Select Subscription Tier Plan</h3>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {subscriptionPlans.map(plan => {
+            const isFree = plan.key === 'FREE';
+            const priceVal = billingCycle === 'monthly' ? `$${plan.priceMonthly}` : `$${plan.priceAnnually}`;
+            const isCurrentlyActive = activePlan === plan.key;
+            
+            // Generate visual styles based on plan key
+            const tagColor = plan.key === 'FREE' ? 'text-slate-400'
+              : plan.key === 'STARTUP' ? 'text-rose-500'
+              : plan.key === 'BUSINESS' ? 'text-amber-500'
+              : 'text-emerald-500';
 
-          {([
-            { key: 'FREE' as const, label: 'Starter Sandbox', tag: 'Free Baseline', tagColor: 'text-slate-400', price: '$0', annualPrice: '$0', border: 'border-indigo-500 bg-indigo-500/5 ring-1 ring-indigo-500/20', activeBg: 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400', features: ['Max 5 custom fields', '10 PDF monthly exports', 'Default brand presets'], warn: 'No AI template parsing' },
-            { key: 'STARTUP' as const, label: 'Growth Startup', tag: 'Popular', tagColor: 'text-rose-500', price: '$49', annualPrice: '$39', border: 'border-rose-500 bg-rose-500/5 ring-1 ring-rose-500/20', activeBg: 'bg-rose-500/10 text-rose-600 dark:text-rose-400', features: ['Max 15 custom fields', '50 PDF/Excel exports', 'Custom branding layout', '200k monthly AI tokens'] },
-            { key: 'BUSINESS' as const, label: 'Enterprise Lite', tag: 'Scale', tagColor: 'text-amber-500', price: '$199', annualPrice: '$159', border: 'border-amber-500 bg-amber-500/5 ring-1 ring-amber-500/20', activeBg: 'bg-amber-500/10 text-amber-600 dark:text-amber-400', features: ['Max 50 custom fields', '250 exports / formulas', 'Automated custom rules', '1M monthly AI tokens'] },
-            { key: 'ENTERPRISE' as const, label: 'Unlimited Corp', tag: 'Unrestricted', tagColor: 'text-emerald-500', price: '$499', annualPrice: '$399', border: 'border-emerald-500 bg-emerald-500/5 ring-1 ring-emerald-500/20', activeBg: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400', features: ['Unlimited custom properties', 'Unlimited PDF / Excel reports', 'Cryptographic SOC2 Audits', '100M custom AI tokens'] },
-          ]).map(plan => (
-            <div key={plan.key} className={`glass-card rounded-3xl p-6 border flex flex-col justify-between min-h-[380px] relative ${activePlan === plan.key ? plan.border : 'border-zinc-200/50 dark:border-zinc-800/40'}`}>
-              <div>
-                <span className={`text-[10px] font-extrabold uppercase tracking-widest ${plan.tagColor}`}>{plan.tag}</span>
-                <h4 className="text-xl font-bold mt-1.5 text-slate-800 dark:text-zinc-100">{plan.label}</h4>
-                <p className="text-3xl font-black mt-4 text-slate-900 dark:text-zinc-50">
-                  {billingCycle === 'monthly' ? plan.price : plan.annualPrice}
-                  <span className="text-xs font-semibold text-slate-400">/mo</span>
-                </p>
-                {billingCycle === 'annual' && plan.key !== 'FREE' && (
-                  <p className="text-[10px] text-emerald-600 font-bold mt-1">Billed annually ({plan.annualPrice === '$39' ? '$468' : plan.annualPrice === '$159' ? '$1,908' : '$4,788'}/yr)</p>
-                )}
-                <ul className="text-xs space-y-2.5 text-slate-500 dark:text-zinc-400 mt-6">
-                  {plan.features.map((f, i) => (
-                    <li key={i} className="flex items-center gap-2"><Check size={12} className="text-emerald-500" />{f}</li>
-                  ))}
-                  {plan.warn && (
-                    <li className="flex items-center gap-2 text-rose-500"><AlertTriangle size={12} />{plan.warn}</li>
-                  )}
-                </ul>
-              </div>
-              <button
-                onClick={() => handleUpgradePlan(plan.key)}
-                disabled={activePlan === plan.key}
-                className={`w-full py-2.5 rounded-xl text-xs font-bold transition-all mt-8 ${activePlan === plan.key ? plan.activeBg : 'bg-zinc-900 text-white dark:bg-white dark:text-black hover:scale-[1.02]'}`}
+            const borderStyle = plan.key === 'FREE' ? 'border-indigo-500 bg-indigo-500/5 ring-1 ring-indigo-500/20'
+              : plan.key === 'STARTUP' ? 'border-rose-500 bg-rose-500/5 ring-1 ring-rose-500/20'
+              : plan.key === 'BUSINESS' ? 'border-amber-500 bg-amber-500/5 ring-1 ring-amber-500/20'
+              : 'border-emerald-500 bg-emerald-500/5 ring-1 ring-emerald-500/20';
+
+            const activeBgStyle = plan.key === 'FREE' ? 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400'
+              : plan.key === 'STARTUP' ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400'
+              : plan.key === 'BUSINESS' ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
+              : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-450';
+            
+            return (
+              <div 
+                key={plan.id} 
+                className={`glass-card rounded-3xl p-6 border flex flex-col justify-between min-h-[400px] relative ${
+                  isCurrentlyActive ? borderStyle : 'border-zinc-200/50 dark:border-zinc-800/40'
+                }`}
               >
-                {activePlan === plan.key ? 'Active Plan' : 'Select Plan'}
-              </button>
-            </div>
-          ))}
+                <div>
+                  <span className={`text-[10px] font-extrabold uppercase tracking-widest ${tagColor}`}>
+                    {plan.key === 'FREE' ? 'Free Baseline' : plan.key === 'STARTUP' ? 'Popular' : plan.key === 'BUSINESS' ? 'Scale' : 'Unrestricted'}
+                  </span>
+                  <h4 className="text-xl font-bold mt-1.5 text-slate-800 dark:text-zinc-100">{plan.name}</h4>
+                  <p className="text-3xl font-black mt-4 text-slate-900 dark:text-zinc-50">
+                    {priceVal}
+                    <span className="text-xs font-semibold text-slate-400">/mo</span>
+                  </p>
+                  {billingCycle === 'annual' && !isFree && (
+                    <p className="text-[10px] text-emerald-600 font-bold mt-1">Billed annually (${plan.priceAnnually * 12}/yr)</p>
+                  )}
+                  
+                  <ul className="text-xs space-y-2.5 text-slate-500 dark:text-zinc-400 mt-6">
+                    {plan.features.map((f, i) => (
+                      <li key={i} className="flex items-center gap-2">
+                        <Check size={12} className="text-emerald-500 shrink-0" />
+                        <span className="truncate">{f}</span>
+                      </li>
+                    ))}
+                    {isFree && (
+                      <li className="flex items-center gap-2 text-rose-500">
+                        <AlertTriangle size={12} className="shrink-0" />
+                        <span>No AI template parsing</span>
+                      </li>
+                    )}
+                  </ul>
+                </div>
+                
+                <button
+                  onClick={() => handleUpgradePlan(plan.key)}
+                  disabled={isCurrentlyActive}
+                  className={`w-full py-2.5 rounded-xl text-xs font-bold transition-all mt-8 ${
+                    isCurrentlyActive ? activeBgStyle : 'bg-zinc-950 text-slate-800 dark:bg-white dark:text-black hover:scale-[1.02] cursor-pointer hover:shadow-md'
+                  }`}
+                >
+                  {isCurrentlyActive ? 'Active Plan' : 'Select Plan'}
+                </button>
+              </div>
+            );
+          })}
 
         </div>
       </div>

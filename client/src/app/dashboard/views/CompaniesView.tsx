@@ -53,8 +53,11 @@ export default function CompaniesView() {
     setActiveTenant,
     users,
     addUser,
-    deleteUser
+    deleteUser,
+    subscriptionPlans
   } = useTenantStore();
+
+  const selectedPlanData = subscriptionPlans.find(p => p.key === formPlan);
 
   // User creation inside selected company
   const [newUserName, setNewUserName] = useState('');
@@ -89,10 +92,8 @@ export default function CompaniesView() {
 
   const calculateMRR = (tenants: Tenant[]) => {
     return tenants.reduce((sum, t) => {
-      if (t.plan === 'STARTUP') return sum + 99;
-      if (t.plan === 'BUSINESS') return sum + 199;
-      if (t.plan === 'ENTERPRISE') return sum + 499;
-      return sum;
+      const plan = subscriptionPlans.find(p => p.key === t.plan);
+      return sum + (plan ? plan.priceMonthly : 0);
     }, 0);
   };
   const currentMRR = calculateMRR(tenantsList);
@@ -499,10 +500,9 @@ export default function CompaniesView() {
                 onChange={(e) => setFormPlan(e.target.value as any)}
                 className="w-full rounded-xl px-3 py-2.5 text-sm bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 focus:outline-none font-semibold text-slate-700 dark:text-zinc-300"
               >
-                <option value="FREE">FREE</option>
-                <option value="STARTUP">STARTUP</option>
-                <option value="BUSINESS">BUSINESS</option>
-                <option value="ENTERPRISE">ENTERPRISE</option>
+                {subscriptionPlans.map(plan => (
+                  <option key={plan.key} value={plan.key}>{plan.name} ({plan.key})</option>
+                ))}
               </select>
             </div>
 
@@ -719,10 +719,9 @@ export default function CompaniesView() {
                   onChange={(e) => setFormPlan(e.target.value as any)}
                   className="w-full rounded-xl px-3 py-2.5 text-sm bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 focus:outline-none font-semibold text-slate-700 dark:text-zinc-300"
                 >
-                  <option value="FREE">FREE</option>
-                  <option value="STARTUP">STARTUP</option>
-                  <option value="BUSINESS">BUSINESS</option>
-                  <option value="ENTERPRISE">ENTERPRISE</option>
+                  {subscriptionPlans.map(plan => (
+                    <option key={plan.key} value={plan.key}>{plan.name} ({plan.key})</option>
+                  ))}
                 </select>
               </div>
 
@@ -854,7 +853,7 @@ export default function CompaniesView() {
                   <p className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-wider">Plan & Pricing</p>
                   <div className="flex items-baseline gap-1.5">
                     <span className="text-lg font-black text-slate-800 dark:text-zinc-150">
-                      {formPlan === 'FREE' ? '$0' : formPlan === 'STARTUP' ? '$99' : formPlan === 'BUSINESS' ? '$199' : '$499'}
+                      ${selectedPlanData ? selectedPlanData.priceMonthly : 0}
                     </span>
                     <span className="text-xs text-slate-400 dark:text-zinc-500 font-medium">/mo</span>
                     <span className={`ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold uppercase ${
@@ -863,20 +862,17 @@ export default function CompaniesView() {
                       {formPlan}
                     </span>
                   </div>
-                  <p className="text-[10px] text-slate-450 dark:text-zinc-450 leading-relaxed">
-                    {formPlan === 'FREE' ? 'Ideal for baseline B2B sandboxing & testing.' : 
-                     formPlan === 'STARTUP' ? 'For growing companies with custom styling.' : 
-                     formPlan === 'BUSINESS' ? 'Advanced integrations, PDF templates & AI copilot.' : 
-                     'Full enterprise capacity with SOC2 audits & compliance logs.'}
+                  <p className="text-[10px] text-slate-455 dark:text-zinc-455 leading-relaxed">
+                    {selectedPlanData ? selectedPlanData.description : 'No description available.'}
                   </p>
                 </div>
 
                 <div className="p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200/50 dark:border-zinc-800/40 space-y-2">
                   <p className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-wider">Quota Limits</p>
                   <ul className="text-[11px] text-slate-600 dark:text-zinc-450 space-y-1 font-semibold">
-                    <li>• Custom Fields: <strong className="text-slate-800 dark:text-zinc-200">{formPlan === 'FREE' ? '5' : formPlan === 'STARTUP' ? '15' : formPlan === 'BUSINESS' ? '50' : 'Unlimited'}</strong></li>
-                    <li>• Monthly Exports: <strong className="text-slate-800 dark:text-zinc-200">{formPlan === 'FREE' ? '10' : formPlan === 'STARTUP' ? '50' : formPlan === 'BUSINESS' ? '250' : 'Unlimited'}</strong></li>
-                    <li>• AI Tokens/mo: <strong className="text-slate-800 dark:text-zinc-200">{formPlan === 'FREE' ? '50k' : formPlan === 'STARTUP' ? '200k' : formPlan === 'BUSINESS' ? '1M' : '100M'}</strong></li>
+                    <li>• Custom Fields: <strong className="text-slate-800 dark:text-zinc-200">{selectedPlanData ? (selectedPlanData.maxCustomFields === 999 ? 'Unlimited' : selectedPlanData.maxCustomFields) : 0}</strong></li>
+                    <li>• Monthly Exports: <strong className="text-slate-800 dark:text-zinc-200">{selectedPlanData ? (selectedPlanData.maxMonthlyExports === 9999 ? 'Unlimited' : selectedPlanData.maxMonthlyExports) : 0}</strong></li>
+                    <li>• AI Tokens/mo: <strong className="text-slate-800 dark:text-zinc-200">{selectedPlanData ? selectedPlanData.maxAiTokens : '0'}</strong></li>
                   </ul>
                 </div>
               </div>
