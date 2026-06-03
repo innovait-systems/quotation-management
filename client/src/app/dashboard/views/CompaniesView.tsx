@@ -842,6 +842,46 @@ export default function CompaniesView() {
               </div>
             </div>
 
+            {/* Subscription & Quota Details Section */}
+            <div className="space-y-4 pt-4 border-t border-zinc-200/50 dark:border-zinc-800/40">
+              <div className="flex items-center gap-1.5">
+                <BadgeDollarSign size={14} className="text-slate-400 animate-pulse" />
+                <label className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400">Subscription & Quota Details</label>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200/50 dark:border-zinc-800/40 space-y-2">
+                  <p className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-wider">Plan & Pricing</p>
+                  <div className="flex items-baseline gap-1.5">
+                    <span className="text-lg font-black text-slate-800 dark:text-zinc-150">
+                      {formPlan === 'FREE' ? '$0' : formPlan === 'STARTUP' ? '$99' : formPlan === 'BUSINESS' ? '$199' : '$499'}
+                    </span>
+                    <span className="text-xs text-slate-400 dark:text-zinc-500 font-medium">/mo</span>
+                    <span className={`ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold uppercase ${
+                      formPlan === 'FREE' ? 'bg-zinc-100 text-slate-650 dark:bg-zinc-800 dark:text-zinc-355' : 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20'
+                    }`}>
+                      {formPlan}
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-slate-450 dark:text-zinc-450 leading-relaxed">
+                    {formPlan === 'FREE' ? 'Ideal for baseline B2B sandboxing & testing.' : 
+                     formPlan === 'STARTUP' ? 'For growing companies with custom styling.' : 
+                     formPlan === 'BUSINESS' ? 'Advanced integrations, PDF templates & AI copilot.' : 
+                     'Full enterprise capacity with SOC2 audits & compliance logs.'}
+                  </p>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200/50 dark:border-zinc-800/40 space-y-2">
+                  <p className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-wider">Quota Limits</p>
+                  <ul className="text-[11px] text-slate-600 dark:text-zinc-450 space-y-1 font-semibold">
+                    <li>• Custom Fields: <strong className="text-slate-800 dark:text-zinc-200">{formPlan === 'FREE' ? '5' : formPlan === 'STARTUP' ? '15' : formPlan === 'BUSINESS' ? '50' : 'Unlimited'}</strong></li>
+                    <li>• Monthly Exports: <strong className="text-slate-800 dark:text-zinc-200">{formPlan === 'FREE' ? '10' : formPlan === 'STARTUP' ? '50' : formPlan === 'BUSINESS' ? '250' : 'Unlimited'}</strong></li>
+                    <li>• AI Tokens/mo: <strong className="text-slate-800 dark:text-zinc-200">{formPlan === 'FREE' ? '50k' : formPlan === 'STARTUP' ? '200k' : formPlan === 'BUSINESS' ? '1M' : '100M'}</strong></li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
             {/* Workspace Users Section */}
             <div className="space-y-4 pt-4 border-t border-zinc-200/50 dark:border-zinc-800/40">
               <div className="flex items-center gap-1.5">
