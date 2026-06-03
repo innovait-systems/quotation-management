@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 
 export default function DashboardHubView() {
-  const { activeTenant } = useTenantStore();
+  const { activeTenant, currentUser } = useTenantStore();
   const { getMetrics, getLogs, getPendingActions, setCurrentTab } = useDashboardStore();
 
   const [metrics, setMetrics] = useState<MetricCard[]>([]);
@@ -49,7 +49,7 @@ export default function DashboardHubView() {
       let valModifier = 0;
 
       if (activeTenant.slug === 'antigravity') {
-        newLog = { id: newId, timestamp: timeStr, user: 'Rajesh S. (You)', action: 'Record PO Partial Receipt', impact: 'Recorded 4 remaining Cloud nodes on PO-2026-8008 (COMPLETED)', color: 'text-emerald-500' };
+        newLog = { id: newId, timestamp: timeStr, user: `${currentUser.firstName} ${currentUser.lastName.charAt(0)}. (You)`, action: 'Record PO Partial Receipt', impact: 'Recorded 4 remaining Cloud nodes on PO-2026-8008 (COMPLETED)', color: 'text-emerald-500' };
         newAction = { id: `act-${newId}`, type: 'success', message: 'Purchase Order PO-2026-8008 successfully closed out!', eta: 'Just now' };
         valModifier = 12000;
       } else if (activeTenant.slug === 'stark') {
@@ -86,7 +86,7 @@ export default function DashboardHubView() {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 bg-clip-text text-transparent dark:from-zinc-100 dark:via-zinc-200 dark:to-zinc-100">
-              Welcome Back, Rajesh
+              Welcome Back, {currentUser.firstName}
             </h1>
             <span className="animate-bounce">👋</span>
           </div>
