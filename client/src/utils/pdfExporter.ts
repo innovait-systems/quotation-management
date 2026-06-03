@@ -1,5 +1,6 @@
 import { Tenant } from '../store/tenantStore';
 import { useTemplatesStore } from '../store/templatesStore';
+import { getCurrencySymbol } from './currency';
 
 export function exportDocumentToPDF(doc: any, type: 'QUOTATION' | 'PURCHASE_ORDER' | 'INVOICE' | 'SERVICE', activeTenant: Tenant, mode: 'print' | 'download' = 'print') {
   // Retrieve template configurations from Zustand store
@@ -62,7 +63,7 @@ export function exportDocumentToPDF(doc: any, type: 'QUOTATION' | 'PURCHASE_ORDE
   
   // Format numbers to local currency strings
   const formatCurrency = (val: number) => {
-    const curSym = doc.currency || (activeTenant.currency === 'EUR' ? '€' : '$');
+    const curSym = getCurrencySymbol(doc.currency || activeTenant.currency);
     return `${curSym}${val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
 

@@ -16,6 +16,7 @@ import { useCustomFieldsStore } from '../../../store/customFieldsStore';
 import { useTemplatesStore } from '../../../store/templatesStore';
 import DynamicFormCompiler from '../../../components/dynamic-form/dynamic-form';
 import { exportDocumentToPDF } from '../../../utils/pdfExporter';
+import { getCurrencySymbol } from '../../../utils/currency';
 import {
   CreditCard, Plus, DollarSign, Clock, AlertTriangle, CheckCircle2,
   Download, X, Banknote, Mail, Phone
@@ -113,6 +114,7 @@ const renderFieldInput = (
   );
 };
 
+
 export default function InvoicesView() {
   const { activeTenant, currentUser } = useTenantStore();
   const { can } = usePermissions();
@@ -146,7 +148,7 @@ export default function InvoicesView() {
   const [formLines, setFormLines] = useState<LineItem[]>([
     { id: 'inv-new-1', description: '', quantity: 1, unitPrice: 0, taxRate: 18, discount: 0 },
   ]);
-  const [formCurrency, setFormCurrency] = useState(activeTenant.currency === 'EUR' ? '€' : '$');
+  const [formCurrency, setFormCurrency] = useState(getCurrencySymbol(activeTenant.currency));
   const [dynamicValues, setDynamicValues] = useState<Record<string, any>>({});
   const [formCustomColumns, setFormCustomColumns] = useState<{ key: string; label: string; type: 'text' | 'number' }[]>([]);
   const [formAuthorizedPersonId, setFormAuthorizedPersonId] = useState('');
@@ -162,7 +164,7 @@ export default function InvoicesView() {
   const [payMethod, setPayMethod] = useState('Wire Transfer');
   const [payRef, setPayRef] = useState('');
 
-  const cur = activeTenant.currency === 'EUR' ? '€' : '$';
+  const cur = getCurrencySymbol(activeTenant.currency);
   const tenantCustomers = customers.filter(c => c.tenantId === activeTenant.id);
 
   const stats = {
@@ -252,7 +254,7 @@ export default function InvoicesView() {
     setFormCustomerAddress('');
     setFormDueDate('');
     setFormLines([{ id: `inv-new-${Date.now()}`, description: '', quantity: 1, unitPrice: 0, taxRate: 18, discount: 0 }]);
-    setFormCurrency(activeTenant.currency === 'EUR' ? '€' : '$');
+    setFormCurrency(getCurrencySymbol(activeTenant.currency));
     setDynamicValues({});
     setFormAuthorizedPersonId('');
     setFormCustomColumns(defaultTpl?.config?.lineItemColumns || []);
@@ -345,7 +347,7 @@ export default function InvoicesView() {
                   setFormCustomer(cust.name);
                   setFormCompany(cust.company);
                   setFormCustomerAddress(cust.address);
-                  setFormCurrency(cust.currency === 'EUR' ? '€' : cust.currency === 'GBP' ? '£' : cust.currency === 'INR' ? '₹' : '$');
+                  setFormCurrency(getCurrencySymbol(cust.currency));
                   
                   // Calculate due date based on payment terms
                   const terms = cust.paymentTerms;

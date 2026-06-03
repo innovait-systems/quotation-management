@@ -19,6 +19,7 @@ import { useCustomFieldsStore } from '../../../store/customFieldsStore';
 import { useTemplatesStore } from '../../../store/templatesStore';
 import DynamicFormCompiler from '../../../components/dynamic-form/dynamic-form';
 import { exportDocumentToPDF } from '../../../utils/pdfExporter';
+import { getCurrencySymbol } from '../../../utils/currency';
 import {
   FileText, Plus, ArrowRight, Eye, Edit3, Copy, Download,
   ChevronRight, Clock, GitBranch, Sparkles, X, ArrowLeftRight,
@@ -117,6 +118,7 @@ const renderFieldInput = (
   );
 };
 
+
 export default function QuotationsView() {
   const { activeTenant, currentUser } = useTenantStore();
   const { can } = usePermissions();
@@ -154,7 +156,7 @@ export default function QuotationsView() {
   const [formLines, setFormLines] = useState<LineItem[]>([
     { id: 'new-1', description: '', quantity: 1, unitPrice: 0, taxRate: 18, discount: 0 },
   ]);
-  const [formCurrency, setFormCurrency] = useState(activeTenant.currency === 'EUR' ? '€' : '$');
+  const [formCurrency, setFormCurrency] = useState(getCurrencySymbol(activeTenant.currency));
   const [dynamicValues, setDynamicValues] = useState<Record<string, any>>({});
   const [formCustomColumns, setFormCustomColumns] = useState<{ key: string; label: string; type: 'text' | 'number' }[]>([]);
   const [formAuthorizedPersonId, setFormAuthorizedPersonId] = useState('');
@@ -392,7 +394,7 @@ export default function QuotationsView() {
     setFormTerms('');
     setFormPaymentTerms('');
     setFormLines([{ id: 'new-1', description: '', quantity: 1, unitPrice: 0, taxRate: 18, discount: 0 }]);
-    setFormCurrency(activeTenant.currency === 'EUR' ? '€' : '$');
+    setFormCurrency(getCurrencySymbol(activeTenant.currency));
     setDynamicValues({});
     setFormAuthorizedPersonId('');
     setFormCustomColumns(defaultTpl?.config?.lineItemColumns || []);
@@ -508,7 +510,7 @@ export default function QuotationsView() {
                   } else {
                     setFormPaymentTerms('');
                   }
-                  setFormCurrency(cust.currency === 'EUR' ? '€' : cust.currency === 'GBP' ? '£' : cust.currency === 'INR' ? '₹' : '$');
+                  setFormCurrency(getCurrencySymbol(cust.currency));
                 }
               }}
               className="w-full rounded-xl px-3 py-2.5 text-sm bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 focus:outline-none focus:ring-1 focus:ring-indigo-500 font-semibold"

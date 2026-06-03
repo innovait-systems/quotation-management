@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTenantStore } from '../../../store/tenantStore';
 import { useDashboardStore, MetricCard, ActivityLog, PendingAction } from '../../../store/dashboardStore';
+import { getCurrencySymbol } from '../../../utils/currency';
 import {
   TrendingUp,
   TrendingDown,
@@ -32,7 +33,20 @@ export default function DashboardHubView() {
     // Hide Service SLAs metrics from dashboard metrics list for next phase
     const rawMetrics = getMetrics(activeTenant.id);
     const filteredMetrics = rawMetrics.filter(m => m.label !== 'SLA Compliance');
-    setMetrics(filteredMetrics);
+    const resolvedSymbol = getCurrencySymbol(activeTenant.currency);
+    const mappedMetrics = filteredMetrics.map(m => {
+      if (m.type === 'currency') {
+        const valNum = parseFloat(m.value.replace(/[^0-9.]/g, ''));
+        if (!isNaN(valNum)) {
+          return {
+            ...m,
+            value: `${resolvedSymbol}${valNum.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+          };
+        }
+      }
+      return m;
+    });
+    setMetrics(mappedMetrics);
     setLogs(getLogs(activeTenant.id));
     setActions(getPendingActions(activeTenant.id));
   }, [activeTenant, getMetrics, getLogs, getPendingActions]);
@@ -67,7 +81,7 @@ export default function DashboardHubView() {
       setMetrics(prev => prev.map(m => {
         if (m.label === 'Total Revenue') {
           const valNum = parseFloat(m.value.replace(/[^0-9.]/g, ''));
-          const symbol = m.value.includes('€') ? '€' : '$';
+          const symbol = getCurrencySymbol(activeTenant.currency);
           const updatedVal = (valNum + valModifier).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
           return { ...m, value: `${symbol}${updatedVal}`, change: '+15.2% (Recalculated)' };
         }

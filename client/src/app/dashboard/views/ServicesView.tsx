@@ -17,6 +17,7 @@ import {
   Download, MessageSquare, Timer, Users
 } from 'lucide-react';
 import { exportDocumentToPDF } from '../../../utils/pdfExporter';
+import { getCurrencySymbol } from '../../../utils/currency';
 
 const renderFieldInput = (
   field: any,
@@ -600,7 +601,7 @@ export default function ServicesView() {
                     <div>
                       <p className="text-slate-400 font-bold uppercase tracking-wider text-[9px]">Rate / Cost</p>
                       <p className="font-semibold text-slate-800 dark:text-zinc-200 mt-0.5">
-                        {activeTenant.currency === 'EUR' ? '€' : activeTenant.currency === 'INR' ? '₹' : '$'}
+                        {getCurrencySymbol(activeTenant.currency)}
                         {selectedSvc.serviceCost.toLocaleString()}
                       </p>
                     </div>
