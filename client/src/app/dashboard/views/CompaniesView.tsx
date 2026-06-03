@@ -8,7 +8,8 @@ import SlidePanel from '../../../components/ui/SlidePanel';
 import { getCurrencySymbol } from '../../../utils/currency';
 import {
   Building2, Plus, Search, Check, Trash2, Edit, ShieldCheck, 
-  Wallet, RefreshCw, X, Landmark, Compass, Sliders, CheckSquare, Square
+  Wallet, RefreshCw, X, Landmark, Compass, Sliders, CheckSquare, Square,
+  Users, BadgeDollarSign
 } from 'lucide-react';
 
 const PLAN_BADGES: Record<string, string> = {
@@ -49,8 +50,18 @@ export default function CompaniesView() {
     addTenant, 
     updateTenant, 
     deleteTenant, 
-    setActiveTenant 
+    setActiveTenant,
+    users,
+    addUser,
+    deleteUser
   } = useTenantStore();
+
+  // User creation inside selected company
+  const [newUserName, setNewUserName] = useState('');
+  const [newUserLastName, setNewUserLastName] = useState('');
+  const [newUserEmail, setNewUserEmail] = useState('');
+  const [newUserPassword, setNewUserPassword] = useState('password');
+  const [newUserRole, setNewUserRole] = useState<'TENANT_ADMIN' | 'FINANCE' | 'SALES' | 'OPERATIONS' | 'VIEWER'>('TENANT_ADMIN');
 
   const [searchTerm, setSearchTerm] = useState('');
   const [planFilter, setPlanFilter] = useState<string>('ALL');
@@ -75,6 +86,16 @@ export default function CompaniesView() {
   const enterpriseCount = tenantsList.filter(t => t.plan === 'ENTERPRISE').length;
   const businessCount = tenantsList.filter(t => t.plan === 'BUSINESS').length;
   const startupCount = tenantsList.filter(t => t.plan === 'STARTUP').length;
+
+  const calculateMRR = (tenants: Tenant[]) => {
+    return tenants.reduce((sum, t) => {
+      if (t.plan === 'STARTUP') return sum + 99;
+      if (t.plan === 'BUSINESS') return sum + 199;
+      if (t.plan === 'ENTERPRISE') return sum + 499;
+      return sum;
+    }, 0);
+  };
+  const currentMRR = calculateMRR(tenantsList);
   
   // Calculate average active features across all tenants
   const averageFeatures = totalCount > 0 
@@ -343,19 +364,19 @@ export default function CompaniesView() {
           accentColor={activeTenant.brandingConfig.primary}
         />
         <StatCard
+          label="SaaS MRR (Revenue)"
+          value={`$${currentMRR.toLocaleString()}/mo`}
+          change={`+${(totalCount > 1 ? 12.5 * totalCount : 8.4).toFixed(1)}% growth`}
+          isPositive={true}
+          icon={<BadgeDollarSign size={18} />}
+          accentColor="#10b981"
+        />
+        <StatCard
           label="Enterprise / Business"
           value={`${enterpriseCount} / ${businessCount}`}
           change="Premium Tiers"
           isPositive={true}
           icon={<Wallet size={18} />}
-          accentColor="#10b981"
-        />
-        <StatCard
-          label="Startup Tiers"
-          value={String(startupCount)}
-          change="Growth stage"
-          isPositive={true}
-          icon={<Landmark size={18} />}
           accentColor="#6366f1"
         />
         <StatCard
@@ -818,6 +839,106 @@ export default function CompaniesView() {
                     </button>
                   );
                 })}
+              </div>
+            </div>
+
+            {/* Workspace Users Section */}
+            <div className="space-y-4 pt-4 border-t border-zinc-200/50 dark:border-zinc-800/40">
+              <div className="flex items-center gap-1.5">
+                <Users size={14} className="text-slate-400" />
+                <label className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400">Workspace Users Directory</label>
+              </div>
+
+              {/* List of current company users */}
+              <div className="space-y-2.5 max-h-[200px] overflow-y-auto pr-1">
+                {users.filter(u => u.tenantId === selectedTenant.id).map(user => (
+                  <div key={user.id} className="flex items-center justify-between p-2.5 rounded-xl border border-zinc-200/40 dark:border-zinc-800/20 bg-zinc-50/50 dark:bg-zinc-950/20 text-xs">
+                    <div>
+                      <p className="font-bold text-slate-800 dark:text-zinc-200">{user.firstName} {user.lastName}</p>
+                      <p className="text-[10px] text-slate-400 dark:text-zinc-500">{user.email} &bull; <span className="font-semibold text-indigo-500">{user.role}</span></p>
+                    </div>
+                    {users.filter(u => u.tenantId === selectedTenant.id).length > 1 && (
+                      <button
+                        onClick={() => deleteUser(user.id)}
+                        className="p-1 rounded-md text-rose-500 hover:bg-rose-500/10 transition-colors"
+                        title="Remove user account"
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* Add User Form */}
+              <div className="p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200/50 dark:border-zinc-800/40 space-y-3">
+                <p className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-wider">Provision Workspace User Account</p>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <input
+                    type="text"
+                    value={newUserName}
+                    onChange={(e) => setNewUserName(e.target.value)}
+                    placeholder="First Name"
+                    className="rounded-xl px-2.5 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 focus:outline-none"
+                  />
+                  <input
+                    type="text"
+                    value={newUserLastName}
+                    onChange={(e) => setNewUserLastName(e.target.value)}
+                    placeholder="Last Name"
+                    className="rounded-xl px-2.5 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 focus:outline-none"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <input
+                    type="email"
+                    value={newUserEmail}
+                    onChange={(e) => setNewUserEmail(e.target.value)}
+                    placeholder="User Email Address"
+                    className="rounded-xl px-2.5 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 focus:outline-none"
+                  />
+                  <select
+                    value={newUserRole}
+                    onChange={(e) => setNewUserRole(e.target.value as any)}
+                    className="rounded-xl px-2.5 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 focus:outline-none font-semibold"
+                  >
+                    <option value="TENANT_ADMIN">Tenant Admin</option>
+                    <option value="FINANCE">Finance Staff</option>
+                    <option value="SALES">Sales Executive</option>
+                    <option value="OPERATIONS">Operations Staff</option>
+                    <option value="VIEWER">Guest Viewer</option>
+                  </select>
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="password"
+                    value={newUserPassword}
+                    onChange={(e) => setNewUserPassword(e.target.value)}
+                    placeholder="Password"
+                    className="flex-1 text-xs rounded-xl px-2.5 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 focus:outline-none"
+                  />
+                  <button
+                    onClick={() => {
+                      if (!newUserName || !newUserEmail) return;
+                      addUser({
+                        tenantId: selectedTenant.id,
+                        firstName: newUserName,
+                        lastName: newUserLastName,
+                        email: newUserEmail.trim().toLowerCase(),
+                        role: newUserRole,
+                        password: newUserPassword
+                      });
+                      setNewUserName('');
+                      setNewUserLastName('');
+                      setNewUserEmail('');
+                      setNewUserPassword('password');
+                    }}
+                    disabled={!newUserName || !newUserEmail}
+                    className="px-3.5 py-2 bg-zinc-900 dark:bg-white text-white dark:text-black font-bold text-xs rounded-xl hover:scale-105 active:scale-95 transition-all disabled:opacity-40"
+                  >
+                    Add User
+                  </button>
+                </div>
               </div>
             </div>
           </div>
