@@ -83,7 +83,10 @@ export default function UserProfilePanel({ open, onClose }: UserProfilePanelProp
         email: email.trim().toLowerCase(),
       });
       setProfileSuccess(true);
-      setTimeout(() => setProfileSuccess(false), 3000);
+      setTimeout(() => {
+        setProfileSuccess(false);
+        onClose();
+      }, 800);
     } catch (err) {
       setProfileError('Failed to update profile settings.');
     }
@@ -129,7 +132,10 @@ export default function UserProfilePanel({ open, onClose }: UserProfilePanelProp
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
-      setTimeout(() => setPasswordSuccess(false), 3000);
+      setTimeout(() => {
+        setPasswordSuccess(false);
+        onClose();
+      }, 800);
     } catch (err) {
       setPasswordError('Failed to update password.');
     }

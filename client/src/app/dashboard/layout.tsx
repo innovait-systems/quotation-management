@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTenantStore } from '../../store/tenantStore';
 import UserProfilePanel from '../../components/UserProfilePanel';
@@ -81,6 +81,24 @@ export default function DashboardLayout({
   const [isMounted, setIsMounted] = useState(false);
   const [isAuthChecking, setIsAuthChecking] = useState(true);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+
+  const orgDropdownRef = useRef<HTMLDivElement>(null);
+  const userDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (orgDropdownRef.current && !orgDropdownRef.current.contains(event.target as Node)) {
+        setOrgDropdownOpen(false);
+      }
+      if (userDropdownRef.current && !userDropdownRef.current.contains(event.target as Node)) {
+        setUserDropdownOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   React.useEffect(() => {
     setIsMounted(true);
@@ -333,7 +351,7 @@ export default function DashboardLayout({
         <header className="glass-panel sticky top-4 left-4 right-4 z-20 flex h-20 items-center justify-between px-6 rounded-3xl mx-4 mt-4 shadow-sm border border-zinc-200/50 dark:border-zinc-800/40">
           
           {/* LEFT: WORKSPACE TENANT INTERACTIVE SWITCHER */}
-          <div className="relative">
+          <div className="relative" ref={orgDropdownRef}>
             <button 
               onClick={() => {
                 setOrgDropdownOpen(!orgDropdownOpen);
@@ -409,7 +427,7 @@ export default function DashboardLayout({
           <div className="flex items-center gap-4">
             
             {/* USER ACCOUNT SWITCHER */}
-            <div className="relative">
+            <div className="relative" ref={userDropdownRef}>
               <button 
                 onClick={() => {
                   setUserDropdownOpen(!userDropdownOpen);
