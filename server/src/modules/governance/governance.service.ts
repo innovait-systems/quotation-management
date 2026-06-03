@@ -118,7 +118,7 @@ export class GovernanceService {
 
     // 1. Resolve tenant context
     let tenant = null;
-    if (tenantSlugOrId.length === 36) {
+    if (tenantSlugOrId.length === 36 || tenantSlugOrId.startsWith('tenant-')) {
       tenant = await this.prisma.tenant.findUnique({ where: { id: tenantSlugOrId } });
     } else {
       tenant = await this.prisma.tenant.findUnique({ where: { slug: tenantSlugOrId } });

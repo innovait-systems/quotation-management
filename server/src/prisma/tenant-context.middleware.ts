@@ -36,7 +36,7 @@ export class TenantContextMiddleware implements NestMiddleware {
 
     try {
       let tenant = null;
-      if (tenantHeader.length === 36) {
+      if (tenantHeader.length === 36 || tenantHeader.startsWith('tenant-')) {
         tenant = await this.prisma.tenant.findUnique({
           where: { id: tenantHeader },
         });

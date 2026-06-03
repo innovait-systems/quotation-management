@@ -182,12 +182,12 @@ interface TenantState {
     authorizedPersons?: AuthorizedPerson[];
     bankDetails?: BankDetails;
   }) => void;
-  addTenant: (tenant: Omit<Tenant, 'features'>) => void;
+  addTenant: (tenant: Omit<Tenant, 'features'>) => Promise<void>;
   updateTenant: (tenantId: string, updates: Partial<Tenant>) => void;
   deleteTenant: (tenantId: string) => void;
   updateRolePermissions: (role: UserRole, resource: Resource, action: string, value: boolean) => void;
   // User CRUD
-  addUser: (user: Omit<User, 'id' | 'createdAt' | 'isActive'>) => void;
+  addUser: (user: Omit<User, 'id' | 'createdAt' | 'isActive'>) => Promise<void>;
   updateUser: (userId: string, updates: Partial<Pick<User, 'firstName' | 'lastName' | 'email' | 'role' | 'isActive' | 'password'>>) => void;
   deleteUser: (userId: string) => void;
   switchUser: (userId: string) => void;
@@ -560,33 +560,96 @@ export const useTenantStore = create<TenantState>()(
         };
       }),
 
-      addTenant: (newTenantData) => set((state) => {
-        const newTenant: Tenant = {
-          ...newTenantData,
-          features: { ...defaultFeatures },
-          rolePermissions: { ...defaultRolePermissions }
-        };
-        // Auto-provision default seeded users for the new workspace
-        const newWorkspaceUsers = createDefaultUsers(newTenant.id);
-        
-        // If the current logged-in user is SUPER_ADMIN, preserve their session!
-        if (state.currentUser && state.currentUser.role === 'SUPER_ADMIN') {
-          return {
-            tenantsList: [...state.tenantsList, newTenant],
-            users: [...state.users, ...newWorkspaceUsers]
-          };
-        }
+      addTenant: async (newTenantData) => {
+        try {
+          // Call the backend API to create the tenant in PostgreSQL database
+          const tenantRes = await apiRequest('/api/v1/governance/tenants', {
+            method: 'POST',
+            headers: {
+              'x-system-admin-key': 'antigravity_master_sysadmin_secret_2026'
+            },
+            body: JSON.stringify({
+              name: newTenantData.name,
+              slug: newTenantData.slug,
+              currency: newTenantData.currency || 'USD'
+            })
+          });
 
-        const adminUser = newWorkspaceUsers[0];
-        return {
-          tenantsList: [...state.tenantsList, newTenant],
-          activeTenant: newTenant,
-          users: [...state.users, ...newWorkspaceUsers],
-          currentUser: adminUser,
-          activeRole: adminUser.role,
-          isAuthenticated: true,
-        };
-      }),
+          // Create standard users in the database
+          const defaultAdminPassword = 'password';
+          const defaultAdminEmail = `admin@${newTenantData.slug}.com`;
+          
+          await apiRequest('/api/v1/governance/users', {
+            method: 'POST',
+            headers: {
+              'x-system-admin-key': 'antigravity_master_sysadmin_secret_2026'
+            },
+            body: JSON.stringify({
+              tenantSlugOrId: tenantRes.id,
+              email: defaultAdminEmail,
+              passwordRaw: defaultAdminPassword,
+              firstName: 'Company',
+              lastName: 'Admin',
+              role: 'TENANT_ADMIN'
+            })
+          });
+
+          const roles = ['FINANCE', 'SALES', 'OPERATIONS', 'VIEWER'];
+          const labels = ['Finance', 'Sales', 'Ops', 'Viewer'];
+          for (let i = 0; i < roles.length; i++) {
+            await apiRequest('/api/v1/governance/users', {
+              method: 'POST',
+              headers: {
+                'x-system-admin-key': 'antigravity_master_sysadmin_secret_2026'
+              },
+              body: JSON.stringify({
+                tenantSlugOrId: tenantRes.id,
+                email: `${roles[i].toLowerCase()}@${newTenantData.slug}.com`,
+                passwordRaw: 'password',
+                firstName: 'Company',
+                lastName: labels[i],
+                role: roles[i]
+              })
+            });
+          }
+
+          const updatedTenant = {
+            ...tenantRes,
+            brandingConfig: tenantRes.brandingConfig || newTenantData.brandingConfig || { primary: '#6366f1', secondary: '#0f172a' },
+            features: tenantRes.features || defaultFeatures,
+            rolePermissions: tenantRes.rolePermissions || defaultRolePermissions
+          };
+
+          const newWorkspaceUsers = createDefaultUsers(tenantRes.id);
+
+          set((state) => {
+            const list = [...state.tenantsList, updatedTenant];
+            const updatedUsers = [...state.users, ...newWorkspaceUsers];
+            
+            // If the current logged-in user is SUPER_ADMIN, preserve their session!
+            if (state.currentUser && state.currentUser.role === 'SUPER_ADMIN') {
+              return {
+                tenantsList: list,
+                users: updatedUsers
+              };
+            }
+
+            const adminUser = newWorkspaceUsers[0];
+            return {
+              tenantsList: list,
+              activeTenant: updatedTenant,
+              users: updatedUsers,
+              currentUser: adminUser,
+              activeRole: adminUser.role,
+              isAuthenticated: true,
+            };
+          });
+
+        } catch (err) {
+          console.error('Error adding tenant:', err);
+          alert(`Failed to onboard company workspace: ${err instanceof Error ? err.message : err}`);
+        }
+      },
 
       updateTenant: (tenantId, updates) => set((state) => {
         const updatedList = state.tenantsList.map(t => {
@@ -667,17 +730,46 @@ export const useTenantStore = create<TenantState>()(
 
       // ── User CRUD ──────────────────────────────────────────────
 
-      addUser: (userData) => set((state) => {
-        const newUser: User = {
-          ...userData,
-          id: `user-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-          isActive: true,
-          createdAt: new Date().toISOString(),
-        };
-        return {
-          users: [...state.users, newUser],
-        };
-      }),
+      addUser: async (userData) => {
+        try {
+          // Call the backend API to create the user in PostgreSQL database
+          const userRes = await apiRequest('/api/v1/governance/users', {
+            method: 'POST',
+            headers: {
+              'x-system-admin-key': 'antigravity_master_sysadmin_secret_2026'
+            },
+            body: JSON.stringify({
+              tenantSlugOrId: userData.tenantId,
+              email: userData.email,
+              passwordRaw: userData.password || 'password',
+              firstName: userData.firstName,
+              lastName: userData.lastName,
+              role: userData.role
+            })
+          });
+
+          // Add to local state list
+          const newUser: User = {
+            id: userRes.id,
+            tenantId: userRes.tenantId,
+            firstName: userRes.firstName,
+            lastName: userRes.lastName,
+            email: userRes.email,
+            role: userRes.role,
+            isActive: userRes.isActive,
+            createdAt: userRes.createdAt,
+            password: userData.password || 'password'
+          };
+
+          set((state) => ({
+            users: [...state.users, newUser],
+          }));
+
+        } catch (err) {
+          console.error('Error adding user:', err);
+          alert(`Failed to create user: ${err instanceof Error ? err.message : err}`);
+        }
+      },
 
       updateUser: (userId, updates) => set((state) => {
         const updatedUsers = state.users.map(u => 

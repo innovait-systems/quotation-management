@@ -15,7 +15,7 @@ export class TenantGuard implements CanActivate {
     let tenant = null;
 
     if (tenantHeader) {
-      if (tenantHeader.length === 36) {
+      if (tenantHeader.length === 36 || tenantHeader.startsWith('tenant-')) {
         // Query by UUID
         tenant = await this.prisma.tenant.findUnique({
           where: { id: tenantHeader },

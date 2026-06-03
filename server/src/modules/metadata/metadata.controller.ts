@@ -68,8 +68,8 @@ export class MetadataController {
    * Helper utility to resolve tenant context dynamically for local API sandboxes
    */
   private async resolveTenantId(suppliedId?: string): Promise<string> {
-    if (suppliedId && suppliedId.length === 36) {
-      return suppliedId; // Valid UUID directly
+    if (suppliedId && (suppliedId.length === 36 || suppliedId.startsWith('tenant-'))) {
+      return suppliedId; // Valid ID directly
     }
 
     // Attempt lookup by slug or fetch the default seeded tenant
