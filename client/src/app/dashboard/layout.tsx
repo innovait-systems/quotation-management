@@ -539,16 +539,20 @@ export default function DashboardLayout({
             {/* SEPARATOR */}
             <div className="h-6 w-px bg-zinc-200 dark:bg-zinc-800/60" />
 
-            {/* ACTIVE USER DETAILS */}
-            <div className="flex items-center gap-3">
+            {/* ACTIVE USER DETAILS BUTTON */}
+            <button 
+              onClick={() => setIsProfileOpen(true)}
+              className="flex items-center gap-3 px-3 py-1.5 rounded-2xl hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50 border border-transparent hover:border-zinc-200/40 dark:hover:border-zinc-800/30 transition-all text-left cursor-pointer hover:scale-102 active:scale-98"
+              title="Open Profile Settings"
+            >
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-600 dark:text-indigo-400 font-bold shadow-sm">
                 {`${currentUser.firstName.charAt(0)}${currentUser.lastName.charAt(0)}`.toUpperCase()}
               </div>
-              <div className="hidden lg:block text-left leading-tight">
+              <div className="hidden lg:block leading-tight">
                 <p className="text-sm font-bold text-slate-800 dark:text-zinc-200">{currentUser.firstName} {currentUser.lastName}</p>
                 <p className="text-[10px] text-slate-400 dark:text-zinc-500 lowercase tracking-wider">{currentUser.email.toLowerCase()}</p>
               </div>
-            </div>
+            </button>
 
           </div>
         </header>
