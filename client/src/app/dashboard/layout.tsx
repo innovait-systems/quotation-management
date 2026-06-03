@@ -53,6 +53,7 @@ const sidebarItems: SidebarItem[] = [
   { tab: 'TEMPLATES', label: 'Document Templates', icon: Printer, roles: ['SUPER_ADMIN', 'TENANT_ADMIN'] },
   // Next Phase: { tab: 'AI_COPILOT', label: 'AI Workspace', icon: Sparkles, roles: ['SUPER_ADMIN', 'TENANT_ADMIN', 'SALES'] },
   // Next Phase: { tab: 'COMPLIANCE', label: 'SOC2 Ledger', icon: ShieldCheck, roles: ['SUPER_ADMIN', 'TENANT_ADMIN'] },
+  { tab: 'COMPANIES', label: 'Organizations', icon: Building2, roles: ['SUPER_ADMIN', 'TENANT_ADMIN'] },
   { tab: 'USERS', label: 'Team & Roles', icon: UserCog, roles: ['SUPER_ADMIN', 'TENANT_ADMIN'] },
   { tab: 'SETTINGS', label: 'Settings', icon: Settings, roles: ['SUPER_ADMIN', 'TENANT_ADMIN'] },
   { tab: 'SUBSCRIPTIONS', label: 'Subscriptions', icon: Wallet, roles: ['SUPER_ADMIN', 'TENANT_ADMIN'] }

@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-export type DashboardTab = 'DASHBOARD' | 'QUOTATIONS' | 'PURCHASE_ORDERS' | 'INVOICES' | 'SERVICES' | 'SETTINGS' | 'SUBSCRIPTIONS' | 'AI_COPILOT' | 'COMPLIANCE' | 'TEMPLATES' | 'CUSTOMERS' | 'AGREEMENTS' | 'USERS';
+export type DashboardTab = 'DASHBOARD' | 'QUOTATIONS' | 'PURCHASE_ORDERS' | 'INVOICES' | 'SERVICES' | 'SETTINGS' | 'SUBSCRIPTIONS' | 'AI_COPILOT' | 'COMPLIANCE' | 'TEMPLATES' | 'CUSTOMERS' | 'AGREEMENTS' | 'USERS' | 'COMPANIES';
 
 export interface MetricCard {
   label: string;

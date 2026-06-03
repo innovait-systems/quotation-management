@@ -16,6 +16,7 @@ import TemplatesView from './views/TemplatesView';
 import CustomersView from './views/CustomersView';
 import AgreementsView from './views/AgreementsView';
 import UsersView from './views/UsersView';
+import CompaniesView from './views/CompaniesView';
 
 /**
  * Dashboard Router
@@ -40,6 +41,7 @@ export default function DashboardPage() {
     CUSTOMERS: <CustomersView />,
     AGREEMENTS: <AgreementsView />,
     USERS: <UsersView />,
+    COMPANIES: <CompaniesView />,
   };
 
   return views[currentTab] || <DashboardHubView />;

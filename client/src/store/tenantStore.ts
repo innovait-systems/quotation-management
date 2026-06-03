@@ -164,6 +164,8 @@ interface TenantState {
     bankDetails?: BankDetails;
   }) => void;
   addTenant: (tenant: Omit<Tenant, 'features'>) => void;
+  updateTenant: (tenantId: string, updates: Partial<Tenant>) => void;
+  deleteTenant: (tenantId: string) => void;
   updateRolePermissions: (role: UserRole, resource: Resource, action: string, value: boolean) => void;
   // User CRUD
   addUser: (user: Omit<User, 'id' | 'createdAt' | 'isActive'>) => void;
@@ -342,6 +344,59 @@ export const useTenantStore = create<TenantState>()(
           currentUser: adminUser,
           activeRole: adminUser.role,
           isAuthenticated: true,
+        };
+      }),
+
+      updateTenant: (tenantId, updates) => set((state) => {
+        const updatedList = state.tenantsList.map(t => {
+          if (t.id === tenantId) {
+            return {
+              ...t,
+              ...updates,
+              brandingConfig: updates.brandingConfig 
+                ? { ...t.brandingConfig, ...updates.brandingConfig }
+                : t.brandingConfig,
+              features: updates.features
+                ? { ...t.features, ...updates.features }
+                : t.features,
+            };
+          }
+          return t;
+        });
+        const activeChanged = state.activeTenant.id === tenantId;
+        const updatedActive = activeChanged 
+          ? updatedList.find(t => t.id === tenantId) || state.activeTenant
+          : state.activeTenant;
+        return {
+          tenantsList: updatedList,
+          activeTenant: updatedActive
+        };
+      }),
+
+      deleteTenant: (tenantId) => set((state) => {
+        if (state.tenantsList.length <= 1) return {};
+        const updatedList = state.tenantsList.filter(t => t.id !== tenantId);
+        const finalUsers = state.users.filter(u => u.tenantId !== tenantId);
+        
+        if (state.activeTenant.id === tenantId) {
+          const nextActive = updatedList[0];
+          const tenantUsers = finalUsers.filter(u => u.tenantId === nextActive.id);
+          const newWorkspaceUsers = tenantUsers.length > 0 ? [] : createDefaultUsers(nextActive.id);
+          const nextUser = tenantUsers.length > 0 ? tenantUsers[0] : newWorkspaceUsers[0];
+          const updatedUsers = tenantUsers.length > 0 ? finalUsers : [...finalUsers, ...newWorkspaceUsers];
+          
+          return {
+            tenantsList: updatedList,
+            activeTenant: nextActive,
+            currentUser: nextUser,
+            activeRole: nextUser.role,
+            users: updatedUsers
+          };
+        }
+        
+        return {
+          tenantsList: updatedList,
+          users: finalUsers
         };
       }),
 
