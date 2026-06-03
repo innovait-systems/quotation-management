@@ -77,6 +77,76 @@ async function main() {
   });
   console.log(`✅ Production Tenant initialized: ${innovaitTenant.name} (${innovaitTenant.id})`);
 
+  // 3. Create SpaceX Cloud Labs Tenant
+  const spacexTenant = await prisma.tenant.upsert({
+    where: { slug: 'spacex-cloud' },
+    update: {},
+    create: {
+      id: 'tenant-spacex',
+      name: 'SpaceX Cloud Labs',
+      slug: 'spacex-cloud',
+      logoUrl: '',
+      brandingConfig: {
+        primaryColor: '#005288',
+        secondaryColor: '#0f172a',
+        fontFamily: 'Outfit',
+        watermarkText: 'SPACEX ORIGINAL',
+        customCss: ''
+      },
+      currency: 'USD',
+      timezone: 'UTC',
+      taxConfig: {
+        taxBrackets: [
+          { name: 'Standard GST', percentage: 18.0 },
+          { name: 'Zero Rated', percentage: 0.0 }
+        ]
+      },
+      numberingFormats: {
+        QUOTATION: 'QT-{YYYY}-{NNNN}',
+        INVOICE: 'INV-{YYYY}-{NNNN}',
+        PURCHASE_ORDER: 'PO-{YYYY}-{NNNN}'
+      },
+      plan: SubscriptionPlan.BUSINESS,
+      status: TenantStatus.ACTIVE
+    }
+  });
+  console.log(`✅ SpaceX Tenant initialized: ${spacexTenant.name} (${spacexTenant.id})`);
+
+  // 4. Create Wayne Enterprises Tenant
+  const wayneTenant = await prisma.tenant.upsert({
+    where: { slug: 'wayne-enterprises' },
+    update: {},
+    create: {
+      id: 'tenant-wayne',
+      name: 'Wayne Enterprises',
+      slug: 'wayne-enterprises',
+      logoUrl: '',
+      brandingConfig: {
+        primaryColor: '#1e293b',
+        secondaryColor: '#0f172a',
+        fontFamily: 'Outfit',
+        watermarkText: 'WAYNE ORIGINAL',
+        customCss: ''
+      },
+      currency: 'USD',
+      timezone: 'UTC',
+      taxConfig: {
+        taxBrackets: [
+          { name: 'Standard GST', percentage: 18.0 },
+          { name: 'Zero Rated', percentage: 0.0 }
+        ]
+      },
+      numberingFormats: {
+        QUOTATION: 'QT-{YYYY}-{NNNN}',
+        INVOICE: 'INV-{YYYY}-{NNNN}',
+        PURCHASE_ORDER: 'PO-{YYYY}-{NNNN}'
+      },
+      plan: SubscriptionPlan.ENTERPRISE,
+      status: TenantStatus.ACTIVE
+    }
+  });
+  console.log(`✅ Wayne Tenant initialized: ${wayneTenant.name} (${wayneTenant.id})`);
+
   const salt = await bcrypt.genSalt(10);
 
   // 3. Seed Users
@@ -116,9 +186,76 @@ async function main() {
   });
   console.log(`✅ Platform Owner seeded: ${innovaitAdmin.email}`);
 
-  // Seed both tenants' metadata and templates inside a clean loop
-  const tenants = [masterTenant, innovaitTenant];
-  const admins = [masterAdmin, innovaitAdmin];
+  const defaultPasswordHash = await bcrypt.hash('password', salt);
+
+  // Seed SpaceX Admin explicitly
+  const spacexAdmin = await prisma.user.upsert({
+    where: { email: 'admin@spacex-cloud.com' },
+    update: {},
+    create: {
+      id: `user-${spacexTenant.id}-admin`,
+      tenantId: spacexTenant.id,
+      email: 'admin@spacex-cloud.com',
+      passwordHash: defaultPasswordHash,
+      firstName: 'Company',
+      lastName: 'Admin',
+      role: UserRole.TENANT_ADMIN,
+      isActive: true,
+      mfaEnabled: false
+    }
+  });
+
+  // Seed Wayne Admin explicitly
+  const wayneAdmin = await prisma.user.upsert({
+    where: { email: 'admin@wayne-enterprises.com' },
+    update: {},
+    create: {
+      id: `user-${wayneTenant.id}-admin`,
+      tenantId: wayneTenant.id,
+      email: 'admin@wayne-enterprises.com',
+      passwordHash: defaultPasswordHash,
+      firstName: 'Company',
+      lastName: 'Admin',
+      role: UserRole.TENANT_ADMIN,
+      isActive: true,
+      mfaEnabled: false
+    }
+  });
+
+  const seedOtherTenantUsers = async (tenantId: string, slug: string) => {
+    const roles: UserRole[] = [UserRole.FINANCE, UserRole.SALES, UserRole.OPERATIONS, UserRole.VIEWER];
+    const roleLabels = ['Finance', 'Sales', 'Ops', 'Viewer'];
+    
+    for (let i = 0; i < roles.length; i++) {
+      const role = roles[i];
+      const label = roleLabels[i];
+      const email = `${role.toLowerCase()}@${slug}.com`;
+      
+      await prisma.user.upsert({
+        where: { email },
+        update: {},
+        create: {
+          id: `user-${tenantId}-${role.toLowerCase()}`,
+          tenantId,
+          email,
+          passwordHash: defaultPasswordHash,
+          firstName: 'Company',
+          lastName: label,
+          role,
+          isActive: true,
+          mfaEnabled: false
+        }
+      });
+    }
+  };
+
+  await seedOtherTenantUsers(spacexTenant.id, 'spacex-cloud');
+  await seedOtherTenantUsers(wayneTenant.id, 'wayne-enterprises');
+  console.log('✅ Demo Company standard users seeded.');
+
+  // Seed all tenants' metadata and templates inside a clean loop
+  const tenants = [masterTenant, innovaitTenant, spacexTenant, wayneTenant];
+  const admins = [masterAdmin, innovaitAdmin, spacexAdmin, wayneAdmin];
 
   for (let idx = 0; idx < tenants.length; idx++) {
     const t = tenants[idx];

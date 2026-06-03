@@ -334,10 +334,56 @@ const mockTenants: Tenant[] = [
       branch: ''
     },
     rolePermissions: { ...defaultRolePermissions }
+  },
+  {
+    id: 'tenant-spacex',
+    name: 'SpaceX Cloud Labs',
+    slug: 'spacex-cloud',
+    plan: 'BUSINESS',
+    currency: 'USD',
+    brandingConfig: { primary: '#005288', secondary: '#0f172a' },
+    features: { ...defaultFeatures },
+    logoUrl: '',
+    address: '',
+    authorizedPersons: [],
+    bankDetails: {
+      accountNo: '',
+      beneficiaryName: '',
+      bankName: '',
+      ifscCode: '',
+      swiftCode: '',
+      branch: ''
+    },
+    rolePermissions: { ...defaultRolePermissions }
+  },
+  {
+    id: 'tenant-wayne',
+    name: 'Wayne Enterprises',
+    slug: 'wayne-enterprises',
+    plan: 'ENTERPRISE',
+    currency: 'USD',
+    brandingConfig: { primary: '#1e293b', secondary: '#0f172a' },
+    features: { ...defaultFeatures },
+    logoUrl: '',
+    address: '',
+    authorizedPersons: [],
+    bankDetails: {
+      accountNo: '',
+      beneficiaryName: '',
+      bankName: '',
+      ifscCode: '',
+      swiftCode: '',
+      branch: ''
+    },
+    rolePermissions: { ...defaultRolePermissions }
   }
 ];
 
-const defaultUsersList = createDefaultUsers(defaultTenantId);
+const defaultUsersList = [
+  ...createDefaultUsers(defaultTenantId),
+  ...createDefaultUsers('tenant-spacex'),
+  ...createDefaultUsers('tenant-wayne')
+];
 const defaultAdminUser = defaultUsersList[0];
 
 export const defaultSubscriptionPlans: SubscriptionPlanItem[] = [
@@ -689,7 +735,7 @@ export const useTenantStore = create<TenantState>()(
     }),
 
     {
-      name: 'quotation-tenant-storage-v5',
+      name: 'quotation-tenant-storage-v6',
     }
   )
 );
