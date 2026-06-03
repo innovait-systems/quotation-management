@@ -110,7 +110,7 @@ export default function WelcomePortalGate() {
         return;
       }
 
-      const success = login(email.trim().toLowerCase(), matched.id);
+      const success = login(email.trim().toLowerCase(), matched.id, password);
       if (success) {
         // Apply success animation and redirect
         router.push('/dashboard');
@@ -129,7 +129,7 @@ export default function WelcomePortalGate() {
     setPassword('password');
 
     setTimeout(() => {
-      const success = login(selectedUser.email, matchedTenant.id);
+      const success = login(selectedUser.email, matchedTenant.id, selectedUser.password || 'password');
       if (success) {
         router.push('/dashboard');
       } else {

@@ -136,6 +136,7 @@ export interface User {
   role: UserRole;
   isActive: boolean;
   createdAt: string;
+  password?: string;
 }
 
 interface TenantState {
@@ -145,7 +146,7 @@ interface TenantState {
   activeRole: UserRole;
   users: User[];
   isAuthenticated: boolean;
-  login: (email: string, tenantId: string) => boolean;
+  login: (email: string, tenantId: string, password?: string) => boolean;
   logout: () => void;
   setActiveTenant: (tenantId: string) => void;
   toggleTenantFeature: (featureId: keyof TenantFeatures) => void;
@@ -166,7 +167,7 @@ interface TenantState {
   updateRolePermissions: (role: UserRole, resource: Resource, action: string, value: boolean) => void;
   // User CRUD
   addUser: (user: Omit<User, 'id' | 'createdAt' | 'isActive'>) => void;
-  updateUser: (userId: string, updates: Partial<Pick<User, 'firstName' | 'lastName' | 'email' | 'role' | 'isActive'>>) => void;
+  updateUser: (userId: string, updates: Partial<Pick<User, 'firstName' | 'lastName' | 'email' | 'role' | 'isActive' | 'password'>>) => void;
   deleteUser: (userId: string) => void;
   switchUser: (userId: string) => void;
   getUsersForTenant: (tenantId: string) => User[];
@@ -200,6 +201,7 @@ const createDefaultUsers = (tenantId: string): User[] => [
     role: 'SUPER_ADMIN',
     isActive: true,
     createdAt: new Date().toISOString(),
+    password: 'password',
   }
 ];
 
@@ -240,13 +242,14 @@ export const useTenantStore = create<TenantState>()(
       users: defaultUsersList,
       isAuthenticated: false,
 
-      login: (email, tenantId) => {
+      login: (email, tenantId, password) => {
         const state = get();
         const user = state.users.find(
           (u) => u.email.toLowerCase() === email.toLowerCase().trim() && u.tenantId === tenantId && u.isActive
         );
         const tenant = state.tenantsList.find((t) => t.id === tenantId);
-        if (user && tenant) {
+        const userPassword = user?.password || 'password';
+        if (user && tenant && (!password || userPassword === password)) {
           set({
             currentUser: user,
             activeRole: user.role,

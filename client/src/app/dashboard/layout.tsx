@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTenantStore } from '../../store/tenantStore';
+import UserProfilePanel from '../../components/UserProfilePanel';
 import { useDashboardStore, DashboardTab } from '../../store/dashboardStore';
 import { 
   LayoutDashboard, 
@@ -79,6 +80,7 @@ export default function DashboardLayout({
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const [isAuthChecking, setIsAuthChecking] = useState(true);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
 
   React.useEffect(() => {
     setIsMounted(true);
@@ -432,14 +434,28 @@ export default function DashboardLayout({
                         <p className="font-bold text-slate-800 dark:text-zinc-100 text-xs truncate">
                           {currentUser.firstName} {currentUser.lastName}
                         </p>
-                        <p className="text-[10px] text-slate-400 dark:text-zinc-500 truncate font-medium">
-                          {currentUser.email}
+                        <p className="text-[10px] text-slate-400 dark:text-zinc-500 truncate font-medium lowercase">
+                          {currentUser.email.toLowerCase()}
                         </p>
                         <div className="inline-flex mt-1 items-center px-2 py-0.5 rounded-full text-[9px] font-bold bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">
                           {ROLE_LABELS[activeRole] || activeRole}
                         </div>
                       </div>
                     </div>
+                  </div>
+
+                  {/* Profile Settings Action */}
+                  <div className="px-2 pb-2 border-b border-zinc-200/50 dark:border-zinc-800/40 mb-2">
+                    <button
+                      onClick={() => {
+                        setIsProfileOpen(true);
+                        setUserDropdownOpen(false);
+                      }}
+                      className="flex w-full items-center gap-3 px-3 py-2 rounded-2xl text-left text-xs font-semibold text-slate-700 dark:text-zinc-300 hover:bg-zinc-100 hover:text-slate-900 dark:hover:bg-zinc-800/40 dark:hover:text-zinc-50 transition-all cursor-pointer"
+                    >
+                      <UserCog size={14} className="text-indigo-500" />
+                      <span>Profile Settings</span>
+                    </button>
                   </div>
 
                   {/* Switch User Account section (Admin Only) */}
@@ -530,7 +546,7 @@ export default function DashboardLayout({
               </div>
               <div className="hidden lg:block text-left leading-tight">
                 <p className="text-sm font-bold text-slate-800 dark:text-zinc-200">{currentUser.firstName} {currentUser.lastName}</p>
-                <p className="text-[10px] text-slate-400 dark:text-zinc-500 uppercase tracking-widest">{currentUser.email}</p>
+                <p className="text-[10px] text-slate-400 dark:text-zinc-500 lowercase tracking-wider">{currentUser.email.toLowerCase()}</p>
               </div>
             </div>
 
@@ -678,6 +694,9 @@ export default function DashboardLayout({
           </div>
         </div>
       )}
+
+      {/* USER PROFILE SETTINGS PANEL */}
+      <UserProfilePanel open={isProfileOpen} onClose={() => setIsProfileOpen(false)} />
     </div>
   );
 }
