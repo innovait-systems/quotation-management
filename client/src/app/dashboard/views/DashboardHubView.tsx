@@ -79,7 +79,7 @@ export default function DashboardHubView() {
       if (newAction) setActions(prev => [newAction!, ...prev]);
 
       setMetrics(prev => prev.map(m => {
-        if (m.label === 'Total Revenue') {
+        if (m.label === 'Invoiced (Collected)') {
           const valNum = parseFloat(m.value.replace(/[^0-9.]/g, ''));
           const symbol = getCurrencySymbol(activeTenant.currency);
           const updatedVal = (valNum + valModifier).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -136,43 +136,8 @@ export default function DashboardHubView() {
         </div>
       </div>
 
-      {/* SUBSCRIPTION BANNER */}
-      <div
-        className="glass-card rounded-3xl p-5 border border-zinc-200/50 dark:border-zinc-800/40 relative overflow-hidden"
-        style={{ borderLeft: `4px solid ${activeTenant.brandingConfig.primary}` }}
-      >
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 z-10 relative">
-          <div className="flex items-start sm:items-center gap-3.5">
-            <div
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-white font-bold"
-              style={{ backgroundColor: activeTenant.brandingConfig.primary }}
-            >
-              <Zap size={18} />
-            </div>
-            <div>
-              <p className="text-sm font-bold text-slate-800 dark:text-zinc-100 flex items-center gap-2">
-                <span>Enterprise Sandbox Active</span>
-                <span className="px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-widest bg-emerald-500/10 text-emerald-600 rounded-full border border-emerald-500/20">
-                  {activePlan} Plan
-                </span>
-              </p>
-              <p className="text-xs text-slate-500 dark:text-zinc-400 mt-0.5">
-                Multi-tenant row validation (`TenantGuard`) and metadata snapshot freezes are locked and compliant.
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={() => setCurrentTab('SUBSCRIPTIONS')}
-            className="flex items-center gap-2 shrink-0 bg-zinc-200/50 dark:bg-zinc-800/50 px-3 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-widest text-slate-500 hover:text-slate-800 dark:text-zinc-400 dark:hover:text-zinc-200 transition-all"
-          >
-            <span>Manage Plan Limits</span>
-            <ChevronRight size={12} />
-          </button>
-        </div>
-      </div>
-
-      {/* 3-COLUMN METRIC KPI GRID (SLA Compliance hidden for next phase) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      {/* 4-COLUMN METRIC KPI GRID */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {metrics.map((card, idx) => {
           const TrendIcon = card.isPositive ? TrendingUp : TrendingDown;
           const trendColor = card.isPositive ? 'text-emerald-500 dark:text-emerald-400 bg-emerald-500/10 border-emerald-500/20' : 'text-rose-500 dark:text-rose-400 bg-rose-500/10 border-rose-500/20';
