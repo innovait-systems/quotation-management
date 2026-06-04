@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTenantStore } from '../../../store/tenantStore';
 import { useDashboardStore, MetricCard, ActivityLog, PendingAction } from '../../../store/dashboardStore';
+import { useDocumentStore } from '../../../store/documentStore';
 import { getCurrencySymbol } from '../../../utils/currency';
 import {
   TrendingUp,
@@ -18,75 +19,347 @@ import {
   ChevronRight,
 } from 'lucide-react';
 
+const getMoMChange = (currentList: any[], valueKey: string, dateKey: string) => {
+  const now = new Date();
+  const currentMonth = now.getMonth();
+  const currentYear = now.getFullYear();
+  
+  const lastMonth = currentMonth === 0 ? 11 : currentMonth - 1;
+  const lastMonthYear = currentMonth === 0 ? currentYear - 1 : currentYear;
+
+  let currentSum = 0;
+  let lastSum = 0;
+
+  currentList.forEach(item => {
+    const itemDate = new Date(item[dateKey]);
+    if (isNaN(itemDate.getTime())) return;
+    
+    const m = itemDate.getMonth();
+    const y = itemDate.getFullYear();
+
+    if (m === currentMonth && y === currentYear) {
+      currentSum += Number(item[valueKey]);
+    } else if (m === lastMonth && y === lastMonthYear) {
+      lastSum += Number(item[valueKey]);
+    }
+  });
+
+  if (lastSum === 0) return { change: '—', isPositive: true };
+  const diff = ((currentSum - lastSum) / lastSum) * 100;
+  const prefix = diff >= 0 ? '+' : '';
+  return {
+    change: `${prefix}${diff.toFixed(1)}%`,
+    isPositive: diff >= 0
+  };
+};
+
+const getQuotesMoMChange = (quotesList: any[]) => {
+  const now = new Date();
+  const currentMonth = now.getMonth();
+  const currentYear = now.getFullYear();
+  
+  const lastMonth = currentMonth === 0 ? 11 : currentMonth - 1;
+  const lastMonthYear = currentMonth === 0 ? currentYear - 1 : currentYear;
+
+  let currentCount = 0;
+  let lastCount = 0;
+
+  quotesList.forEach(item => {
+    if (item.status === 'DRAFT') return;
+    const itemDate = new Date(item.createdAt);
+    if (isNaN(itemDate.getTime())) return;
+    
+    const m = itemDate.getMonth();
+    const y = itemDate.getFullYear();
+
+    if (m === currentMonth && y === currentYear) {
+      currentCount++;
+    } else if (m === lastMonth && y === lastMonthYear) {
+      lastCount++;
+    }
+  });
+
+  if (lastCount === 0) return { change: '—', isPositive: true };
+  const diff = ((currentCount - lastCount) / lastCount) * 100;
+  const prefix = diff >= 0 ? '+' : '';
+  return {
+    change: `${prefix}${diff.toFixed(1)}%`,
+    isPositive: diff >= 0
+  };
+};
+
 export default function DashboardHubView() {
   const { activeTenant, currentUser } = useTenantStore();
-  const { getMetrics, getLogs, getPendingActions, setCurrentTab } = useDashboardStore();
+  const { setCurrentTab } = useDashboardStore();
+  const { quotes, invoices, orders } = useDocumentStore();
 
   const [metrics, setMetrics] = useState<MetricCard[]>([]);
   const [logs, setLogs] = useState<ActivityLog[]>([]);
   const [actions, setActions] = useState<PendingAction[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const activePlan = activeTenant.plan;
-
   useEffect(() => {
-    // Hide Service SLAs metrics from dashboard metrics list for next phase
-    const rawMetrics = getMetrics(activeTenant.id);
-    const filteredMetrics = rawMetrics.filter(m => m.label !== 'SLA Compliance');
+    const tenantQuotes = quotes.filter(q => q.tenantId === activeTenant.id);
+    const tenantInvoices = invoices.filter(i => i.tenantId === activeTenant.id);
+    const tenantOrders = orders.filter(o => o.tenantId === activeTenant.id);
     const resolvedSymbol = getCurrencySymbol(activeTenant.currency);
-    const mappedMetrics = filteredMetrics.map(m => {
-      if (m.type === 'currency') {
-        const valNum = parseFloat(m.value.replace(/[^0-9.]/g, ''));
-        if (!isNaN(valNum)) {
-          return {
-            ...m,
-            value: `${resolvedSymbol}${valNum.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-          };
-        }
+
+    const totalInvoiceValue = tenantInvoices.reduce((sum, inv) => sum + inv.grandTotal, 0);
+    const quotesSentCount = tenantQuotes.filter(q => q.status !== 'DRAFT').length;
+    const totalCollected = tenantInvoices.reduce((sum, inv) => sum + (inv.grandTotal - inv.balanceDue), 0);
+    const totalPendingCollection = tenantInvoices.reduce((sum, inv) => sum + inv.balanceDue, 0);
+
+    const invoiceValChange = getMoMChange(tenantInvoices, 'grandTotal', 'issueDate');
+    const quotesSentChange = getQuotesMoMChange(tenantQuotes);
+    const collectedChange = getMoMChange(tenantInvoices, 'grandTotal', 'issueDate'); 
+    const pendingChange = getMoMChange(tenantInvoices, 'balanceDue', 'issueDate');
+
+    const mappedMetrics: MetricCard[] = [
+      {
+        label: 'Invoice Value',
+        value: `${resolvedSymbol}${totalInvoiceValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+        change: invoiceValChange.change === '—' ? '0.0%' : invoiceValChange.change,
+        isPositive: invoiceValChange.change === '—' ? true : invoiceValChange.isPositive,
+        type: 'currency'
+      },
+      {
+        label: 'Quotes Sent',
+        value: `${quotesSentCount} Sent`,
+        change: quotesSentChange.change === '—' ? '0.0%' : quotesSentChange.change,
+        isPositive: quotesSentChange.change === '—' ? true : quotesSentChange.isPositive,
+        type: 'number'
+      },
+      {
+        label: 'Invoiced (Collected)',
+        value: `${resolvedSymbol}${totalCollected.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+        change: collectedChange.change === '—' ? '0.0%' : collectedChange.change,
+        isPositive: collectedChange.change === '—' ? true : collectedChange.isPositive,
+        type: 'currency'
+      },
+      {
+        label: 'Pending Collection',
+        value: `${resolvedSymbol}${totalPendingCollection.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+        change: pendingChange.change === '—' ? '0.0%' : pendingChange.change,
+        isPositive: pendingChange.change === '—' ? true : pendingChange.isPositive,
+        type: 'currency'
       }
-      return m;
+    ];
+
+    // Build Activity Logs dynamically
+    const dynamicLogs: ActivityLog[] = [];
+    
+    tenantQuotes.forEach(q => {
+      dynamicLogs.push({
+        id: `quote-log-create-${q.id}`,
+        timestamp: q.createdAt ? q.createdAt.slice(0, 10) : 'Just now',
+        user: 'Sales Exec',
+        action: `Created Quote ${q.quoteNumber}`,
+        impact: `Subtotal: ${resolvedSymbol}${q.subTotal.toLocaleString(undefined, { minimumFractionDigits: 2 })} (${q.status})`,
+        color: 'text-indigo-500'
+      });
     });
+
+    tenantInvoices.forEach(i => {
+      if (i.status === 'PAID') {
+        dynamicLogs.push({
+          id: `inv-log-paid-${i.id}`,
+          timestamp: i.createdAt ? i.createdAt.slice(0, 10) : 'Just now',
+          user: 'Reconciliation Bot',
+          action: 'Payment Reconciled',
+          impact: `Invoice ${i.invoiceNumber} marked as PAID`,
+          color: 'text-emerald-500'
+        });
+      } else {
+        dynamicLogs.push({
+          id: `inv-log-sent-${i.id}`,
+          timestamp: i.createdAt ? i.createdAt.slice(0, 10) : 'Just now',
+          user: 'Finance Staff',
+          action: i.status === 'DRAFT' ? 'Created Invoice Draft' : 'Invoice Sent',
+          impact: `${i.invoiceNumber} for ${i.customerCompany} (${i.status})`,
+          color: 'text-slate-500'
+        });
+      }
+    });
+
+    tenantOrders.forEach(o => {
+      dynamicLogs.push({
+        id: `po-log-${o.id}`,
+        timestamp: o.createdAt ? o.createdAt.slice(0, 10) : 'Just now',
+        user: 'Ops Staff',
+        action: `Created Purchase Order ${o.poNumber}`,
+        impact: `Total: ${resolvedSymbol}${o.grandTotal.toLocaleString(undefined, { minimumFractionDigits: 2 })} (${o.status})`,
+        color: 'text-amber-500'
+      });
+    });
+
+    // Fallback if logs are empty (show seeding indicators or system initialization logs)
+    if (dynamicLogs.length === 0) {
+      dynamicLogs.push({
+        id: 'system-init',
+        timestamp: 'Init',
+        user: 'System Engine',
+        action: 'Workspace Provisioned',
+        impact: `Cryptographic audit trails and metadata snapshots operational for ${activeTenant.name}`,
+        color: 'text-indigo-500'
+      });
+    }
+
+    const sortedLogs = dynamicLogs
+      .sort((a, b) => b.id.localeCompare(a.id))
+      .slice(0, 5);
+
+    // Build Pending Actions dynamically
+    const dynamicActions: PendingAction[] = [];
+    
+    tenantQuotes.forEach(q => {
+      if (q.status === 'DRAFT') {
+        dynamicActions.push({
+          id: `act-q-draft-${q.id}`,
+          type: 'info',
+          message: `Quote ${q.quoteNumber} is in draft mode (requires submission)`,
+          eta: 'Pending'
+        });
+      } else if (q.status === 'SUBMITTED') {
+        dynamicActions.push({
+          id: `act-q-sub-${q.id}`,
+          type: 'warning',
+          message: `Quote ${q.quoteNumber} is submitted and awaiting client approval`,
+          eta: 'Awaiting'
+        });
+      }
+    });
+
+    tenantInvoices.forEach(i => {
+      if (i.status === 'DRAFT') {
+        dynamicActions.push({
+          id: `act-i-draft-${i.id}`,
+          type: 'info',
+          message: `Invoice draft ${i.invoiceNumber} is ready to be finalized and sent`,
+          eta: 'Pending'
+        });
+      } else if (i.status === 'OVERDUE') {
+        dynamicActions.push({
+          id: `act-i-over-${i.id}`,
+          type: 'warning',
+          message: `Invoice ${i.invoiceNumber} for ${i.customerCompany} is overdue`,
+          eta: 'Overdue'
+        });
+      }
+    });
+
+    tenantOrders.forEach(o => {
+      if (o.status === 'OPEN') {
+        dynamicActions.push({
+          id: `act-o-open-${o.id}`,
+          type: 'warning',
+          message: `Purchase Order ${o.poNumber} has pending delivery receipt`,
+          eta: 'Open'
+        });
+      }
+    });
+
+    // Fallback if actions are empty
+    if (dynamicActions.length === 0) {
+      dynamicActions.push({
+        id: 'act-clear',
+        type: 'success',
+        message: 'All procurement and billing workflows are up-to-date!',
+        eta: 'Completed'
+      });
+    }
+
     setMetrics(mappedMetrics);
-    setLogs(getLogs(activeTenant.id));
-    setActions(getPendingActions(activeTenant.id));
-  }, [activeTenant, getMetrics, getLogs, getPendingActions]);
+    setLogs(sortedLogs);
+    setActions(dynamicActions.slice(0, 5));
+  }, [activeTenant, quotes, invoices, orders]);
 
   const handleSimulateTransaction = () => {
     setIsRefreshing(true);
     setTimeout(() => {
       const newId = String(Date.now());
       const now = new Date();
-      const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
-
-      let newLog: ActivityLog;
-      let newAction: PendingAction | null = null;
-      let valModifier = 0;
+      const resolvedSymbol = getCurrencySymbol(activeTenant.currency);
 
       if (activeTenant.slug === 'antigravity') {
-        newLog = { id: newId, timestamp: timeStr, user: `${currentUser.firstName} ${currentUser.lastName.charAt(0)}. (You)`, action: 'Record PO Partial Receipt', impact: 'Recorded 4 remaining Cloud nodes on PO-2026-8008 (COMPLETED)', color: 'text-emerald-500' };
-        newAction = { id: `act-${newId}`, type: 'success', message: 'Purchase Order PO-2026-8008 successfully closed out!', eta: 'Just now' };
-        valModifier = 12000;
+        // Antigravity Tenant: Simulate PO creation
+        const simulatedPO = {
+          id: `sim-po-${newId}`,
+          poNumber: `PO-2026-${String(Math.floor(Math.random() * 9000) + 1000)}`,
+          tenantId: activeTenant.id,
+          supplierId: `sim-sup-${newId}`,
+          supplierName: 'Operations Admin',
+          supplierCompany: 'Cloud Labs Supplier Inc.',
+          quotationId: null,
+          quotationRef: null,
+          status: 'COMPLETED' as const,
+          subTotal: 12000,
+          taxTotal: 2160,
+          grandTotal: 14160,
+          currency: resolvedSymbol,
+          deliveryTerms: 'Standard PO Receipt',
+          lines: [
+            { id: `sim-po-line-${newId}`, description: 'Simulated PO Cloud Nodes Fulfillment', quantityOrdered: 4, quantityReceived: 4, unitPrice: 3000, taxRate: 18, total: 14160 }
+          ],
+          dynamicValues: {},
+          createdAt: now.toISOString().slice(0, 10)
+        };
+        useDocumentStore.getState().addPurchaseOrder(simulatedPO);
       } else if (activeTenant.slug === 'stark') {
-        newLog = { id: newId, timestamp: timeStr, user: 'Tony Stark', action: 'Custom Field Recalculated', impact: 'Iron Man Arc core formulas recalculated with 99.9% yield SOW', color: 'text-sky-500' };
-        newAction = { id: `act-${newId}`, type: 'info', message: 'SOW formula solved successfully (Clamping variables frozen)', eta: '1s ago' };
-        valModifier = 500000;
+        // Stark Tenant: Simulate Quote approval
+        const simulatedQuote = {
+          id: `sim-q-${newId}`,
+          quoteNumber: `QT-2026-${String(Math.floor(Math.random() * 9000) + 1000)}`,
+          tenantId: activeTenant.id,
+          customerId: `sim-cust-${newId}`,
+          customerName: 'Pepper Potts',
+          customerCompany: 'Stark Industries',
+          validUntil: new Date(now.getTime() + 15 * 86400000).toISOString().slice(0, 10),
+          version: 1,
+          status: 'APPROVED' as const,
+          subTotal: 500000,
+          taxTotal: 90000,
+          discountTotal: 0,
+          grandTotal: 590000,
+          currency: resolvedSymbol,
+          terms: 'Iron Man Arc Formula recalculated',
+          lines: [
+            { id: `sim-q-line-${newId}`, description: 'Vibranium Yield SOW Formula Calculation', quantity: 1, unitPrice: 500000, taxRate: 18, discount: 0 }
+          ],
+          dynamicValues: {},
+          revisions: [],
+          createdAt: now.toISOString().slice(0, 10)
+        };
+        useDocumentStore.getState().addQuotation(simulatedQuote);
       } else {
-        newLog = { id: newId, timestamp: timeStr, user: 'Acme Admin', action: 'Invoice Created', impact: 'Draft invoice INV-0495 compiled with default SLA templates', color: 'text-rose-500' };
-        valModifier = 4500;
+        // Other tenants: Simulate Invoice creation and payment
+        const simulatedInvoice = {
+          id: `sim-inv-${newId}`,
+          invoiceNumber: `INV-2026-${String(Math.floor(Math.random() * 9000) + 1000)}`,
+          tenantId: activeTenant.id,
+          customerId: `sim-cust-${newId}`,
+          customerName: 'Acme Admin',
+          customerCompany: 'Acme Corp',
+          quotationRef: null,
+          issueDate: now.toISOString().slice(0, 10),
+          dueDate: new Date(now.getTime() + 30 * 86400000).toISOString().slice(0, 10),
+          status: 'PAID' as const,
+          subTotal: 4500,
+          taxTotal: 810,
+          discountTotal: 0,
+          grandTotal: 5310,
+          balanceDue: 0,
+          currency: resolvedSymbol,
+          lines: [
+            { id: `sim-inv-line-${newId}`, description: 'Simulated B2B SLA Billing', quantity: 1, unitPrice: 4500, taxRate: 18, discount: 0 }
+          ],
+          payments: [
+            { id: `sim-pay-${newId}`, amount: 5310, method: 'Stripe Reconciled', reference: `TXN-${newId}`, recordedAt: now.toISOString().slice(0, 19).replace('T', ' '), recordedBy: 'System Auto Engine' }
+          ],
+          dynamicValues: {},
+          createdAt: now.toISOString().slice(0, 10)
+        };
+        useDocumentStore.getState().addInvoice(simulatedInvoice);
       }
-
-      setLogs(prev => [newLog, ...prev.slice(0, 4)]);
-      if (newAction) setActions(prev => [newAction!, ...prev]);
-
-      setMetrics(prev => prev.map(m => {
-        if (m.label === 'Invoiced (Collected)') {
-          const valNum = parseFloat(m.value.replace(/[^0-9.]/g, ''));
-          const symbol = getCurrencySymbol(activeTenant.currency);
-          const updatedVal = (valNum + valModifier).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-          return { ...m, value: `${symbol}${updatedVal}`, change: '+15.2% (Recalculated)' };
-        }
-        return m;
-      }));
 
       setIsRefreshing(false);
     }, 800);
