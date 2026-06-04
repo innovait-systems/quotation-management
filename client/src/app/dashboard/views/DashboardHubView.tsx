@@ -98,6 +98,24 @@ export default function DashboardHubView() {
   const [actions, setActions] = useState<PendingAction[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
+  // Dynamic monthly operational revenue calculations from exact store data
+  const tenantInvoices = invoices.filter(i => i.tenantId === activeTenant.id);
+  const currentYear = new Date().getFullYear();
+  const monthlyRevenue = Array(12).fill(0);
+  
+  tenantInvoices.forEach(inv => {
+    if (inv.status === 'CANCELLED') return;
+    const d = new Date(inv.issueDate);
+    if (isNaN(d.getTime())) return;
+    if (d.getFullYear() === currentYear) {
+      monthlyRevenue[d.getMonth()] += inv.grandTotal;
+    }
+  });
+
+  const maxRevenue = Math.max(...monthlyRevenue, 1);
+  const currentMonthIndex = new Date().getMonth();
+  const resolvedSymbol = getCurrencySymbol(activeTenant.currency);
+
   useEffect(() => {
     const tenantQuotes = quotes.filter(q => q.tenantId === activeTenant.id);
     const tenantInvoices = invoices.filter(i => i.tenantId === activeTenant.id);
@@ -452,17 +470,23 @@ export default function DashboardHubView() {
           </div>
 
           <div className="flex-1 flex items-end justify-between h-48 py-6 gap-2">
-            {[45, 60, 52, 70, 85, 65, 95, 80, 110, 90, 125, 145].map((height, i) => {
+            {monthlyRevenue.map((rev, i) => {
               const months = ['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'];
-              const isLast = i === 11;
+              const isActiveMonth = i === currentMonthIndex;
+              const heightPercent = maxRevenue > 1 ? (rev / maxRevenue) * 100 : 0;
               return (
-                <div key={i} className="flex-1 flex flex-col items-center gap-2 group cursor-pointer">
+                <div key={i} className="flex-1 flex flex-col items-center gap-2 group cursor-pointer relative" title={`${months[i]}: ${resolvedSymbol}${rev.toLocaleString(undefined, { minimumFractionDigits: 2 })}`}>
+                  {/* Tooltip on Hover */}
+                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 hidden group-hover:block bg-zinc-950 text-white dark:bg-white dark:text-black text-[10px] font-bold py-1.5 px-2.5 rounded-xl whitespace-nowrap shadow-md z-10 animate-in fade-in zoom-in-95 duration-150">
+                    {resolvedSymbol}{rev.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                  </div>
+
                   <div className="w-full bg-zinc-200/50 dark:bg-zinc-800/20 rounded-t-lg relative overflow-hidden h-36 flex items-end">
                     <div
                       className="w-full rounded-t-lg transition-all duration-700 ease-out origin-bottom group-hover:brightness-110"
                       style={{
-                        height: `${height / 1.5}%`,
-                        backgroundColor: isLast ? activeTenant.brandingConfig.primary : '#94a3b8'
+                        height: `${heightPercent}%`,
+                        backgroundColor: isActiveMonth ? activeTenant.brandingConfig.primary : '#94a3b8'
                       }}
                     />
                   </div>
