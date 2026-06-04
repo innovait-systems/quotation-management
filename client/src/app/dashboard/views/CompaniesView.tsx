@@ -68,6 +68,7 @@ export default function CompaniesView() {
   const [formPrimaryColor, setFormPrimaryColor] = useState('#6366f1');
   const [formSecondaryColor, setFormSecondaryColor] = useState('#0f172a');
   const [formFeatures, setFormFeatures] = useState<TenantFeatures>({ ...DEFAULT_FEATURES });
+  const [formPassword, setFormPassword] = useState('password');
 
   // Safe fallback to prevent hydration or empty store array TypeError crashes
   const plans = (subscriptionPlans && subscriptionPlans.length) ? subscriptionPlans : defaultSubscriptionPlans;
@@ -155,7 +156,7 @@ export default function CompaniesView() {
         swiftCode: '',
         branch: ''
       }
-    });
+    }, formPassword);
 
     // Apply selected feature toggles directly
     updateTenant(newTenantId, { features: formFeatures });
@@ -209,6 +210,7 @@ export default function CompaniesView() {
     setFormPrimaryColor('#6366f1');
     setFormSecondaryColor('#0f172a');
     setFormFeatures({ ...DEFAULT_FEATURES });
+    setFormPassword('password');
   };
 
   const openDetails = (tenant: Tenant) => {
@@ -494,7 +496,7 @@ export default function CompaniesView() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <label className="text-xs font-bold text-slate-500 dark:text-zinc-400">SaaS Plan Tier</label>
               <select
@@ -522,7 +524,9 @@ export default function CompaniesView() {
                 <option value="AUD">AUD (A$)</option>
               </select>
             </div>
+          </div>
 
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <label className="text-xs font-bold text-slate-500 dark:text-zinc-400">Billing Contact Email</label>
               <input
@@ -531,6 +535,18 @@ export default function CompaniesView() {
                 onChange={(e) => setFormEmail(e.target.value)}
                 placeholder="billing@spacex.com"
                 className="w-full rounded-xl px-3 py-2.5 text-sm bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 focus:outline-none focus:ring-1 focus:ring-primary"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-500 dark:text-zinc-400">Default Admin Password *</label>
+              <input
+                type="text"
+                value={formPassword}
+                onChange={(e) => setFormPassword(e.target.value)}
+                placeholder="password"
+                required
+                className="w-full rounded-xl px-3 py-2.5 text-sm bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 focus:outline-none focus:ring-1 focus:ring-primary font-mono"
               />
             </div>
           </div>

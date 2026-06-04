@@ -182,7 +182,7 @@ interface TenantState {
     authorizedPersons?: AuthorizedPerson[];
     bankDetails?: BankDetails;
   }) => void;
-  addTenant: (tenant: Omit<Tenant, 'features'>) => Promise<void>;
+  addTenant: (tenant: Omit<Tenant, 'features'>, adminPassword?: string) => Promise<void>;
   updateTenant: (tenantId: string, updates: Partial<Tenant>) => void;
   deleteTenant: (tenantId: string) => void;
   updateRolePermissions: (role: UserRole, resource: Resource, action: string, value: boolean) => void;
@@ -212,7 +212,7 @@ const defaultFeatures: TenantFeatures = {
 
 const defaultTenantId = 'tenant-innovait';
 
-const createDefaultUsers = (tenantId: string): User[] => {
+const createDefaultUsers = (tenantId: string, slug?: string, adminPassword?: string): User[] => {
   // If default administrative tenant, seed the SUPER_ADMIN
   if (tenantId === defaultTenantId) {
     return [
@@ -225,7 +225,7 @@ const createDefaultUsers = (tenantId: string): User[] => {
         role: 'SUPER_ADMIN',
         isActive: true,
         createdAt: new Date().toISOString(),
-        password: 'password',
+        password: 'InnovaITSecure2026!',
       },
       {
         id: `user-${tenantId}-admin`,
@@ -253,62 +253,63 @@ const createDefaultUsers = (tenantId: string): User[] => {
   }
 
   // For other tenants, seed the typical company roles
-  const slug = tenantId.replace('tenant-', '');
+  const actualSlug = slug || tenantId.replace('tenant-', '');
+  const pass = adminPassword || 'password';
   return [
     {
       id: `user-${tenantId}-admin`,
       tenantId,
       firstName: 'Company',
       lastName: 'Admin',
-      email: `admin@${slug}.com`,
+      email: `admin@${actualSlug}.com`,
       role: 'TENANT_ADMIN',
       isActive: true,
       createdAt: new Date().toISOString(),
-      password: 'password',
+      password: pass,
     },
     {
       id: `user-${tenantId}-finance`,
       tenantId,
       firstName: 'Company',
       lastName: 'Finance',
-      email: `finance@${slug}.com`,
+      email: `finance@${actualSlug}.com`,
       role: 'FINANCE',
       isActive: true,
       createdAt: new Date().toISOString(),
-      password: 'password',
+      password: pass,
     },
     {
       id: `user-${tenantId}-sales`,
       tenantId,
       firstName: 'Company',
       lastName: 'Sales',
-      email: `sales@${slug}.com`,
+      email: `sales@${actualSlug}.com`,
       role: 'SALES',
       isActive: true,
       createdAt: new Date().toISOString(),
-      password: 'password',
+      password: pass,
     },
     {
       id: `user-${tenantId}-ops`,
       tenantId,
       firstName: 'Company',
       lastName: 'Ops',
-      email: `ops@${slug}.com`,
+      email: `ops@${actualSlug}.com`,
       role: 'OPERATIONS',
       isActive: true,
       createdAt: new Date().toISOString(),
-      password: 'password',
+      password: pass,
     },
     {
       id: `user-${tenantId}-viewer`,
       tenantId,
       firstName: 'Company',
       lastName: 'Viewer',
-      email: `viewer@${slug}.com`,
+      email: `viewer@${actualSlug}.com`,
       role: 'VIEWER',
       isActive: true,
       createdAt: new Date().toISOString(),
-      password: 'password',
+      password: pass,
     }
   ];
 };
@@ -381,8 +382,8 @@ const mockTenants: Tenant[] = [
 
 const defaultUsersList = [
   ...createDefaultUsers(defaultTenantId),
-  ...createDefaultUsers('tenant-spacex'),
-  ...createDefaultUsers('tenant-wayne')
+  ...createDefaultUsers('tenant-spacex', 'spacex-cloud'),
+  ...createDefaultUsers('tenant-wayne', 'wayne-enterprises')
 ];
 const defaultAdminUser = defaultUsersList[0];
 
@@ -505,7 +506,7 @@ export const useTenantStore = create<TenantState>()(
         const tenantUsers = state.users.filter(u => u.tenantId === tenantId);
         const newWorkspaceUsers = tenantUsers.length > 0 
           ? [] 
-          : createDefaultUsers(tenantId);
+          : createDefaultUsers(tenantId, tenant.slug);
         const newCurrentUser = tenantUsers.length > 0 
           ? tenantUsers[0] 
           : newWorkspaceUsers[0];
@@ -560,7 +561,7 @@ export const useTenantStore = create<TenantState>()(
         };
       }),
 
-      addTenant: async (newTenantData) => {
+      addTenant: async (newTenantData, adminPassword) => {
         try {
           // Call the backend API to create the tenant in PostgreSQL database
           const tenantRes = await apiRequest('/api/v1/governance/tenants', {
@@ -576,7 +577,7 @@ export const useTenantStore = create<TenantState>()(
           });
 
           // Create standard users in the database
-          const defaultAdminPassword = 'password';
+          const defaultAdminPassword = adminPassword || 'password';
           const defaultAdminEmail = `admin@${newTenantData.slug}.com`;
           
           await apiRequest('/api/v1/governance/users', {
@@ -605,7 +606,7 @@ export const useTenantStore = create<TenantState>()(
               body: JSON.stringify({
                 tenantSlugOrId: tenantRes.id,
                 email: `${roles[i].toLowerCase()}@${newTenantData.slug}.com`,
-                passwordRaw: 'password',
+                passwordRaw: defaultAdminPassword,
                 firstName: 'Company',
                 lastName: labels[i],
                 role: roles[i]
@@ -620,7 +621,7 @@ export const useTenantStore = create<TenantState>()(
             rolePermissions: tenantRes.rolePermissions || defaultRolePermissions
           };
 
-          const newWorkspaceUsers = createDefaultUsers(tenantRes.id);
+          const newWorkspaceUsers = createDefaultUsers(tenantRes.id, tenantRes.slug, defaultAdminPassword);
 
           set((state) => {
             const list = [...state.tenantsList, updatedTenant];
