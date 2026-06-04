@@ -34,6 +34,7 @@ export interface InvoiceRecord {
   templateId?: string;
   customerAddress?: string;
   authorizedPersonId?: string;
+  pdfBase64?: string;
 }
 
 export const mockInvoices: InvoiceRecord[] = [];

@@ -219,6 +219,21 @@ export default function QuotationsView() {
       key: 'status', label: 'Status', sortable: true,
       render: (row) => <StatusBadge status={row.status} />
     },
+    {
+      key: 'pdf', label: 'PDF',
+      render: (row) => (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            exportDocumentToPDF(row, 'QUOTATION', activeTenant, 'download');
+          }}
+          className="p-1.5 rounded-lg border border-zinc-200 dark:border-zinc-800 text-slate-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all flex items-center justify-center active:scale-95"
+          title="Download PDF"
+        >
+          <Download size={14} />
+        </button>
+      )
+    },
   ];
 
   const handleCreate = () => {
@@ -273,6 +288,7 @@ export default function QuotationsView() {
       templateId: formTemplateId,
       authorizedPersonId: formAuthorizedPersonId || undefined,
       paymentTerms: formPaymentTerms || undefined,
+      pdfBase64: undefined,
     };
 
     updateQuotation(updatedQuote);
@@ -283,7 +299,7 @@ export default function QuotationsView() {
 
   const handleConvertToPO = (quote: QuotationRecord) => {
     // 1. Mark the quotation as converted locally and globally
-    const updatedQuote = { ...quote, status: 'CONVERTED' as const };
+    const updatedQuote = { ...quote, status: 'CONVERTED' as const, pdfBase64: undefined };
     updateQuotation(updatedQuote);
 
     // 2. Create and unshift a new Purchase Order Record
@@ -328,7 +344,7 @@ export default function QuotationsView() {
 
   const handleConvertToInvoice = (quote: QuotationRecord) => {
     // 1. Mark the quotation as converted locally and globally
-    const updatedQuote = { ...quote, status: 'CONVERTED' as const };
+    const updatedQuote = { ...quote, status: 'CONVERTED' as const, pdfBase64: undefined };
     updateQuotation(updatedQuote);
 
     // 2. Create and unshift a new Invoice Record
@@ -677,9 +693,9 @@ export default function QuotationsView() {
                     {can('quotations', 'edit') && (
                       <button 
                         onClick={() => {
-                          const updated = { ...selectedQuote, status: 'SUBMITTED' as const };
-                          updateQuotation(updated);
-                          setSelectedQuote(updated);
+                           const updated = { ...selectedQuote, status: 'SUBMITTED' as const, pdfBase64: undefined };
+                           updateQuotation(updated);
+                           setSelectedQuote(updated);
                         }} 
                         className="px-3 py-2 rounded-xl text-xs font-bold bg-blue-500/10 text-blue-600 border border-blue-500/20 hover:bg-blue-500/20 transition-all"
                       >
@@ -691,20 +707,18 @@ export default function QuotationsView() {
                 {selectedQuote.status === 'SUBMITTED' && can('quotations', 'approve') && (
                   <>
                     <button 
-                      onClick={() => { 
-                        const updated = { ...selectedQuote, status: 'APPROVED' as const }; 
-                        updateQuotation(updated);
-                        setSelectedQuote(updated); 
+                      onClick={() => {                         const updated = { ...selectedQuote, status: 'APPROVED' as const, pdfBase64: undefined }; 
+                         updateQuotation(updated);
+                         setSelectedQuote(updated); 
                       }} 
                       className="px-3 py-2 rounded-xl text-xs font-bold bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 hover:bg-emerald-500/20 transition-all"
                     >
                       Approve
                     </button>
                     <button 
-                      onClick={() => { 
-                        const updated = { ...selectedQuote, status: 'REJECTED' as const }; 
-                        updateQuotation(updated);
-                        setSelectedQuote(updated); 
+                      onClick={() => {                         const updated = { ...selectedQuote, status: 'REJECTED' as const, pdfBase64: undefined }; 
+                         updateQuotation(updated);
+                         setSelectedQuote(updated); 
                       }} 
                       className="px-3 py-2 rounded-xl text-xs font-bold bg-rose-500/10 text-rose-500 border border-rose-500/20 hover:bg-rose-500/20 transition-all"
                     >
@@ -726,7 +740,7 @@ export default function QuotationsView() {
                   <button 
                     onClick={() => {
                       if (selectedQuote.status === 'DRAFT') {
-                        const updated = { ...selectedQuote, status: 'SUBMITTED' as const };
+                        const updated = { ...selectedQuote, status: 'SUBMITTED' as const, pdfBase64: undefined };
                         updateQuotation(updated);
                         setSelectedQuote(updated);
                       }

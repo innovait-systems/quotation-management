@@ -194,6 +194,21 @@ export default function PurchaseOrdersView() {
     { key: 'grandTotal', label: 'Grand Total', sortable: true, render: (row) => <span className="font-bold">{row.currency}{row.grandTotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span> },
     { key: 'lines', label: 'Item Lines', render: (row) => <span className="text-slate-400 font-semibold">{row.lines.length} lines</span> },
     { key: 'status', label: 'Fulfillment', sortable: true, render: (row) => <StatusBadge status={row.status} /> },
+    {
+      key: 'pdf', label: 'PDF',
+      render: (row) => (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            exportDocumentToPDF(row, 'PURCHASE_ORDER', activeTenant, 'download');
+          }}
+          className="p-1.5 rounded-lg border border-zinc-200 dark:border-zinc-800 text-slate-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all flex items-center justify-center active:scale-95"
+          title="Download PDF"
+        >
+          <Download size={14} />
+        </button>
+      )
+    },
   ];
 
   const handleCreate = () => {
@@ -252,6 +267,7 @@ export default function PurchaseOrdersView() {
       grandTotal: Math.round((subTotal + taxTotal) * 100) / 100,
       templateId: formTemplateId,
       authorizedPersonId: formAuthorizedPersonId || undefined,
+      pdfBase64: undefined,
     };
 
     updatePurchaseOrder(updatedPO);
@@ -292,7 +308,7 @@ export default function PurchaseOrdersView() {
     const allReceived = updatedLines.every(l => l.quantityReceived >= l.quantityOrdered);
     const anyReceived = updatedLines.some(l => l.quantityReceived > 0);
     const newStatus = allReceived ? 'COMPLETED' : anyReceived ? 'PARTIALLY_RECEIVED' : selectedPO.status;
-    const updatedPO = { ...selectedPO, lines: updatedLines, status: newStatus as PurchaseOrderRecord['status'] };
+    const updatedPO = { ...selectedPO, lines: updatedLines, status: newStatus as PurchaseOrderRecord['status'], pdfBase64: undefined };
 
     updatePurchaseOrder(updatedPO);
     setSelectedPO(updatedPO);
@@ -518,7 +534,13 @@ export default function PurchaseOrdersView() {
                   </button>
                 )}
                  {selectedPO.status === 'OPEN' && can('purchase_orders', 'approve') && (
-                  <button onClick={() => { setOrders(prev => prev.map(o => o.id === selectedPO.id ? { ...o, status: 'CANCELLED' } : o)); setSelectedPO(prev => prev ? { ...prev, status: 'CANCELLED' } : null); }} className="px-3 py-2 rounded-xl text-xs font-bold bg-rose-500/10 text-rose-500 border border-rose-500/20 hover:bg-rose-500/20 transition-all flex items-center gap-1.5">
+                  <button onClick={() => {
+                    if (selectedPO) {
+                      const updated = { ...selectedPO, status: 'CANCELLED' as const, pdfBase64: undefined };
+                      updatePurchaseOrder(updated);
+                      setSelectedPO(updated);
+                    }
+                  }} className="px-3 py-2 rounded-xl text-xs font-bold bg-rose-500/10 text-rose-500 border border-rose-500/20 hover:bg-rose-500/20 transition-all flex items-center gap-1.5">
                     <Ban size={12} /> Cancel PO
                   </button>
                 )}

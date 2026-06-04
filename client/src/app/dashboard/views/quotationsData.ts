@@ -25,6 +25,7 @@ export interface QuotationRecord {
   customerAddress?: string;
   authorizedPersonId?: string;
   paymentTerms?: string;
+  pdfBase64?: string;
 }
 
 export const mockQuotations: QuotationRecord[] = [];

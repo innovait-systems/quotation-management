@@ -198,6 +198,21 @@ export default function ServicesView() {
     }},
     { key: 'assignedTeam', label: 'Team', render: (row) => <span className="text-slate-400 font-semibold">{row.assignedTeam}</span> },
     { key: 'status', label: 'Status', sortable: true, render: (row) => <StatusBadge status={row.status} /> },
+    {
+      key: 'pdf', label: 'PDF',
+      render: (row) => (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            exportDocumentToPDF(row, 'SERVICE', activeTenant, 'download');
+          }}
+          className="p-1.5 rounded-lg border border-zinc-200 dark:border-zinc-800 text-slate-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all flex items-center justify-center active:scale-95"
+          title="Download PDF"
+        >
+          <Download size={14} />
+        </button>
+      )
+    },
   ];
 
   const handleCreate = () => {
@@ -242,6 +257,7 @@ export default function ServicesView() {
       authorizedPersonId: formAuthorizedPersonId || undefined,
       paymentTerms: formPaymentTerms || undefined,
       dynamicValues: { ...editingSvc.dynamicValues, ...dynamicValues },
+      pdfBase64: undefined,
     };
 
     updateService(updatedSvc);
@@ -261,7 +277,7 @@ export default function ServicesView() {
       user: userName, type: 'NOTE', content: newNote,
     };
     
-    const updated = { ...selectedSvc, activities: [...selectedSvc.activities, activity] };
+    const updated = { ...selectedSvc, activities: [...selectedSvc.activities, activity], pdfBase64: undefined };
     updateService(updated);
     setSelectedSvc(updated);
     setNewNote('');
@@ -273,7 +289,7 @@ export default function ServicesView() {
       id: `sa-${Date.now()}`, timestamp: new Date().toISOString().slice(0, 16).replace('T', ' '),
       user: 'System', type: 'STATUS_CHANGE', content: `Status updated: ${selectedSvc.status} → ${newStatus}`,
     };
-    const updated = { ...selectedSvc, status: newStatus, activities: [...selectedSvc.activities, activity] };
+    const updated = { ...selectedSvc, status: newStatus, activities: [...selectedSvc.activities, activity], pdfBase64: undefined };
     updateService(updated);
     setSelectedSvc(updated);
   };

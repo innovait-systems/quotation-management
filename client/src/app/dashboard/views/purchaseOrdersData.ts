@@ -31,6 +31,7 @@ export interface PurchaseOrderRecord {
   templateId?: string;
   customerAddress?: string;
   authorizedPersonId?: string;
+  pdfBase64?: string;
 }
 
 function calcPOLineTotal(qty: number, price: number, tax: number): number {

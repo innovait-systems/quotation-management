@@ -26,6 +26,7 @@ export interface ServiceRecord {
   terms?: string;
   authorizedPersonId?: string;
   paymentTerms?: string;
+  pdfBase64?: string;
 }
 
 export const mockServices: ServiceRecord[] = [];

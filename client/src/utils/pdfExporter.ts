@@ -1,8 +1,9 @@
 import { Tenant } from '../store/tenantStore';
 import { useTemplatesStore } from '../store/templatesStore';
 import { getCurrencySymbol } from './currency';
+import { useDocumentStore } from '../store/documentStore';
 
-export function exportDocumentToPDF(doc: any, type: 'QUOTATION' | 'PURCHASE_ORDER' | 'INVOICE' | 'SERVICE', activeTenant: Tenant, mode: 'print' | 'download' = 'print') {
+export function generateDocumentHTML(doc: any, type: 'QUOTATION' | 'PURCHASE_ORDER' | 'INVOICE' | 'SERVICE', activeTenant: Tenant): string {
   // Retrieve template configurations from Zustand store
   const template = useTemplatesStore.getState().getTemplate(doc.templateId || type);
   const config = template.config;
@@ -950,6 +951,42 @@ export function exportDocumentToPDF(doc: any, type: 'QUOTATION' | 'PURCHASE_ORDE
     </body>
     </html>
   `;
+  return html;
+}
+
+export function exportDocumentToPDF(doc: any, type: 'QUOTATION' | 'PURCHASE_ORDER' | 'INVOICE' | 'SERVICE', activeTenant: Tenant, mode: 'print' | 'download' = 'print') {
+  const docRef = type === 'QUOTATION' ? (doc.quoteNumber || 'QT-DRAFT')
+    : type === 'PURCHASE_ORDER' ? (doc.poNumber || 'PO-DRAFT')
+    : type === 'INVOICE' ? (doc.invoiceNumber || 'INV-DRAFT')
+    : (doc.id || 'SVC-DRAFT');
+  const filename = `${docRef.replace(/[^a-zA-Z0-9-_]/g, '_')}.pdf`;
+
+  if (mode === 'download' && doc.pdfBase64) {
+    try {
+      const byteCharacters = atob(doc.pdfBase64);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: 'application/pdf' });
+      const blobUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => {
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(blobUrl);
+      }, 100);
+      return;
+    } catch (e) {
+      console.error('Failed to download cached PDF, regenerating...', e);
+    }
+  }
+
+  const html = generateDocumentHTML(doc, type, activeTenant);
 
   if (mode === 'download') {
     const filename = `${docRef.replace(/[^a-zA-Z0-9-_]/g, '_')}.pdf`;
@@ -1041,6 +1078,24 @@ export function exportDocumentToPDF(doc: any, type: 'QUOTATION' | 'PURCHASE_ORDE
         document.body.appendChild(a);
         a.click();
         
+        // Convert Blob to Base64 and store it in database
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const base64data = reader.result as string;
+          const base64String = base64data.split(',')[1];
+          const docStore = useDocumentStore.getState();
+          if (type === 'QUOTATION') {
+            docStore.updateQuotation({ ...doc, pdfBase64: base64String });
+          } else if (type === 'INVOICE') {
+            docStore.updateInvoice({ ...doc, pdfBase64: base64String });
+          } else if (type === 'PURCHASE_ORDER') {
+            docStore.updatePurchaseOrder({ ...doc, pdfBase64: base64String });
+          } else if (type === 'SERVICE') {
+            docStore.updateService({ ...doc, pdfBase64: base64String });
+          }
+        };
+        reader.readAsDataURL(blob);
+
         // Clean up
         setTimeout(() => {
           document.body.removeChild(a);

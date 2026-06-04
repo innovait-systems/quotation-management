@@ -199,6 +199,21 @@ export default function InvoicesView() {
       </span>
     )},
     { key: 'status', label: 'Status', sortable: true, render: (row) => <StatusBadge status={row.status} /> },
+    {
+      key: 'pdf', label: 'PDF',
+      render: (row) => (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            exportDocumentToPDF(row, 'INVOICE', activeTenant, 'download');
+          }}
+          className="p-1.5 rounded-lg border border-zinc-200 dark:border-zinc-800 text-slate-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all flex items-center justify-center active:scale-95"
+          title="Download PDF"
+        >
+          <Download size={14} />
+        </button>
+      )
+    },
   ];
 
   const handleCreate = () => {
@@ -237,6 +252,7 @@ export default function InvoicesView() {
       balanceDue: totals.grandTotal,
       templateId: formTemplateId,
       authorizedPersonId: formAuthorizedPersonId || undefined,
+      pdfBase64: undefined,
     };
 
     updateInvoice(updatedInv);
@@ -266,7 +282,7 @@ export default function InvoicesView() {
     const newPayment = { id: `pay-${Date.now()}`, amount: payAmount, method: payMethod, reference: payRef || `REF-${Date.now()}`, recordedAt: new Date().toISOString().slice(0, 19).replace('T', ' '), recordedBy: userName };
     const newBalance = Math.max(0, Math.round((selectedInv.balanceDue - payAmount) * 100) / 100);
     const newStatus = newBalance <= 0 ? 'PAID' : 'PARTIALLY_PAID';
-    const updated = { ...selectedInv, payments: [...selectedInv.payments, newPayment], balanceDue: newBalance, status: newStatus as InvoiceRecord['status'] };
+    const updated = { ...selectedInv, payments: [...selectedInv.payments, newPayment], balanceDue: newBalance, status: newStatus as InvoiceRecord['status'], pdfBase64: undefined };
 
     updateInvoice(updated);
     setSelectedInv(updated);
@@ -479,8 +495,11 @@ export default function InvoicesView() {
                     {can('invoices', 'send') && (
                       <button 
                         onClick={() => { 
-                          setInvoices(prev => prev.map(i => i.id === selectedInv.id ? { ...i, status: 'SENT' } : i)); 
-                          setSelectedInv(prev => prev ? { ...prev, status: 'SENT' } : null); 
+                          if (selectedInv) {
+                            const updated = { ...selectedInv, status: 'SENT' as const, pdfBase64: undefined };
+                            updateInvoice(updated);
+                            setSelectedInv(updated);
+                          }
                           setIsEmailPreviewOpen(true);
                         }} 
                         className="px-3 py-2 rounded-xl text-xs font-bold bg-sky-500/10 text-sky-600 border border-sky-500/20 hover:bg-sky-500/20 transition-all"

@@ -216,6 +216,7 @@ model Quotation {
   dynamicValues  Json            // Key-Value map storing dynamic properties
   metadataSchema Json            // Captured snapshot of the dynamic fields structure used during creation
   templateVersion Int            @default(1)
+  pdfBase64      String?
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
 
@@ -269,6 +270,7 @@ model Invoice {
   paymentQrCode  String?
   dynamicValues  Json
   metadataSchema Json          // Diagnostic historical metadata properties
+  pdfBase64      String?
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
 
@@ -312,6 +314,7 @@ model PurchaseOrder {
   deliveryTerms  String?
   dynamicValues  Json
   metadataSchema Json
+  pdfBase64      String?
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
 
@@ -521,6 +524,7 @@ model Service {
   activities     Json          // Logs, historical interactions, updates
   dynamicValues  Json
   metadataSchema Json
+  pdfBase64      String?
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
 }
