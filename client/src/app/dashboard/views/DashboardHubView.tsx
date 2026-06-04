@@ -471,7 +471,7 @@ export default function DashboardHubView() {
 
           <div className="flex-1 flex items-end justify-between h-48 py-6 gap-2">
             {monthlyRevenue.map((rev, i) => {
-              const months = ['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'];
+              const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
               const isActiveMonth = i === currentMonthIndex;
               const heightPercent = maxRevenue > 1 ? (rev / maxRevenue) * 100 : 0;
               return (
