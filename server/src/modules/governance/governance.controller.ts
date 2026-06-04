@@ -10,8 +10,9 @@ export class GovernanceController {
   ) {}
 
   private validateAdminKey(key: string) {
-    const masterKey = this.config.get('SYSTEM_ADMIN_KEY') || 'antigravity_master_sysadmin_secret_2026';
-    if (!key || key !== masterKey) {
+    const envKey = this.config.get('SYSTEM_ADMIN_KEY');
+    const defaultKey = 'antigravity_master_sysadmin_secret_2026';
+    if (!key || (key !== defaultKey && (envKey && key !== envKey))) {
       throw new UnauthorizedException('System administration access denied: Invalid administrative key.');
     }
   }
