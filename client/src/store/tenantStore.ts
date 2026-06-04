@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { apiRequest } from '../utils/apiClient';
+import { useNotificationStore } from './notificationStore';
 
 export interface TenantBranding {
   primary: string;
@@ -646,6 +647,15 @@ export const useTenantStore = create<TenantState>()(
             };
           });
 
+          // Dispatch notification
+          useNotificationStore.getState().addNotification(
+            'New Company Onboarded',
+            `Provisioned B2B workspace tenant sandbox: ${tenantRes.name}`,
+            'success',
+            'SYSTEM',
+            tenantRes.id
+          );
+
         } catch (err) {
           console.error('Error adding tenant:', err);
           alert(`Failed to onboard company workspace: ${err instanceof Error ? err.message : err}`);
@@ -680,9 +690,21 @@ export const useTenantStore = create<TenantState>()(
 
       deleteTenant: (tenantId) => set((state) => {
         if (state.tenantsList.length <= 1) return {};
+        const deletedTenant = state.tenantsList.find(t => t.id === tenantId);
         const updatedList = state.tenantsList.filter(t => t.id !== tenantId);
         const finalUsers = state.users.filter(u => u.tenantId !== tenantId);
         
+        // Dispatch alert notification
+        if (deletedTenant) {
+          useNotificationStore.getState().addNotification(
+            'Workspace Deleted',
+            `Workspace tenant sandbox removed: ${deletedTenant.name}`,
+            'alert',
+            'SYSTEM',
+            state.activeTenant.id
+          );
+        }
+
         if (state.activeTenant.id === tenantId) {
           const nextActive = updatedList[0];
           const tenantUsers = finalUsers.filter(u => u.tenantId === nextActive.id);
@@ -766,6 +788,15 @@ export const useTenantStore = create<TenantState>()(
             users: [...state.users, newUser],
           }));
 
+          // Dispatch success notification
+          useNotificationStore.getState().addNotification(
+            'New Team Member Invited',
+            `New user account provisioned: ${newUser.firstName} ${newUser.lastName} (${newUser.role})`,
+            'success',
+            'USERS',
+            newUser.tenantId
+          );
+
         } catch (err) {
           console.error('Error adding user:', err);
           alert(`Failed to create user: ${err instanceof Error ? err.message : err}`);
@@ -790,6 +821,17 @@ export const useTenantStore = create<TenantState>()(
       deleteUser: (userId) => set((state) => {
         // Prevent deleting the currently active user
         if (state.currentUser.id === userId) return {};
+        const deletedUser = state.users.find(u => u.id === userId);
+        if (deletedUser) {
+          // Dispatch alert notification
+          useNotificationStore.getState().addNotification(
+            'User Access Removed',
+            `User account deleted: ${deletedUser.firstName} ${deletedUser.lastName}`,
+            'alert',
+            'USERS',
+            deletedUser.tenantId
+          );
+        }
         return {
           users: state.users.filter(u => u.id !== userId),
         };

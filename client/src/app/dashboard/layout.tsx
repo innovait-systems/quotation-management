@@ -31,8 +31,15 @@ import {
   Sun,
   Moon,
   X,
-  Check
+  Check,
+  CheckCheck,
+  Inbox,
+  AlertCircle,
+  Info,
+  UserPlus,
+  Trash2
 } from 'lucide-react';
+import { useNotificationStore } from '../../store/notificationStore';
 
 
 interface SidebarItem {
@@ -83,9 +90,77 @@ export default function DashboardLayout({
   const [isMounted, setIsMounted] = useState(false);
   const [isAuthChecking, setIsAuthChecking] = useState(true);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [notifDropdownOpen, setNotifDropdownOpen] = useState(false);
+  const [notifFilter, setNotifFilter] = useState<'ALL' | 'UNREAD'>('ALL');
 
   const orgDropdownRef = useRef<HTMLDivElement>(null);
   const userDropdownRef = useRef<HTMLDivElement>(null);
+  const notifDropdownRef = useRef<HTMLDivElement>(null);
+
+  const { 
+    notifications, 
+    markAsRead, 
+    markAllAsRead, 
+    clearAll, 
+    deleteNotification 
+  } = useNotificationStore();
+
+  const formatTimeAgo = (isoString: string) => {
+    const now = new Date();
+    const date = new Date(isoString);
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMins / 60);
+    const diffDays = Math.floor(diffHours / 24);
+
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    return `${diffDays}d ago`;
+  };
+
+  const getNotificationIcon = (module: string, type: string) => {
+    switch (module) {
+      case 'QUOTATIONS':
+        return <FileText className="text-indigo-500" size={16} />;
+      case 'INVOICES':
+        return <CreditCard className="text-emerald-500" size={16} />;
+      case 'PURCHASE_ORDERS':
+        return <ShoppingBag className="text-amber-500" size={16} />;
+      case 'SERVICES':
+        return <Wrench className="text-sky-500" size={16} />;
+      case 'USERS':
+        return <UserPlus className="text-pink-500" size={16} />;
+      case 'SYSTEM':
+      default:
+        if (type === 'alert' || type === 'warning') {
+          return <AlertCircle className="text-rose-500" size={16} />;
+        }
+        return <Info className="text-slate-500 dark:text-zinc-400" size={16} />;
+    }
+  };
+
+  const handleNotificationClick = (n: any) => {
+    markAsRead(n.id);
+    setNotifDropdownOpen(false);
+    
+    const targetTabMap: Record<string, DashboardTab> = {
+      QUOTATIONS: 'QUOTATIONS',
+      INVOICES: 'INVOICES',
+      PURCHASE_ORDERS: 'PURCHASE_ORDERS',
+      SERVICES: 'SERVICES',
+      USERS: 'USERS',
+      SYSTEM: activeRole === 'SUPER_ADMIN' ? 'COMPANIES' : 'SETTINGS',
+    };
+
+    const targetTab = targetTabMap[n.module];
+    if (targetTab) {
+      const allowedItem = sidebarItems.find(item => item.tab === targetTab && item.roles.includes(activeRole));
+      if (allowedItem) {
+        setCurrentTab(targetTab);
+      }
+    }
+  };
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -94,6 +169,9 @@ export default function DashboardLayout({
       }
       if (userDropdownRef.current && !userDropdownRef.current.contains(event.target as Node)) {
         setUserDropdownOpen(false);
+      }
+      if (notifDropdownRef.current && !notifDropdownRef.current.contains(event.target as Node)) {
+        setNotifDropdownOpen(false);
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
@@ -604,11 +682,157 @@ export default function DashboardLayout({
               {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
             </button>
 
-            {/* NOTIFICATIONS BELL */}
-            <button className="relative flex h-10 w-10 items-center justify-center rounded-xl border border-zinc-200/50 dark:border-zinc-800/40 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50 text-slate-500 hover:text-primary dark:text-zinc-400 dark:hover:text-zinc-200 transition-all">
-              <BellRing size={16} />
-              <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-rose-500" />
-            </button>
+            {/* NOTIFICATIONS BELL & DROPDOWN */}
+            <div className="relative flex" ref={notifDropdownRef}>
+              <button 
+                onClick={() => {
+                  setNotifDropdownOpen(!notifDropdownOpen);
+                  setOrgDropdownOpen(false);
+                  setUserDropdownOpen(false);
+                }}
+                className="relative flex h-10 w-10 items-center justify-center rounded-xl border border-zinc-200/50 dark:border-zinc-800/40 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50 text-slate-500 hover:text-primary dark:text-zinc-400 dark:hover:text-zinc-200 transition-all cursor-pointer hover:scale-105 active:scale-95"
+                title="Notifications"
+              >
+                <BellRing size={16} />
+                {notifications.filter(n => n.tenantId === activeTenant.id && !n.isRead).length > 0 && (
+                  <span className="absolute top-1.5 right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[8px] font-black text-white ring-2 ring-white dark:ring-zinc-900 animate-pulse">
+                    {notifications.filter(n => n.tenantId === activeTenant.id && !n.isRead).length}
+                  </span>
+                )}
+              </button>
+
+              {notifDropdownOpen && (
+                <div className="absolute right-0 mt-12 w-80 sm:w-96 rounded-3xl border border-zinc-200/60 bg-white/95 p-4 shadow-2xl backdrop-blur-xl dark:border-zinc-800/60 dark:bg-zinc-900/95 animate-in fade-in slide-in-from-top-2 duration-200 z-50">
+                  {/* Dropdown Header */}
+                  <div className="flex items-center justify-between pb-3 border-b border-zinc-200/50 dark:border-zinc-800/40 mb-3">
+                    <div>
+                      <h3 className="text-sm font-extrabold text-slate-900 dark:text-zinc-50">Notifications</h3>
+                      <p className="text-[10px] text-slate-400 dark:text-zinc-500 mt-0.5">
+                        {notifications.filter(n => n.tenantId === activeTenant.id && !n.isRead).length} unread alerts
+                      </p>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => markAllAsRead(activeTenant.id)}
+                        className="p-1 rounded-md text-[10px] font-bold text-indigo-500 hover:bg-indigo-500/10 transition-colors flex items-center gap-1 cursor-pointer"
+                        title="Mark all as read"
+                      >
+                        <CheckCheck size={12} />
+                        <span className="hidden sm:inline">Read all</span>
+                      </button>
+                      <button
+                        onClick={() => clearAll(activeTenant.id)}
+                        className="p-1 rounded-md text-[10px] font-bold text-rose-500 hover:bg-rose-500/10 transition-colors flex items-center gap-1 cursor-pointer"
+                        title="Clear all"
+                      >
+                        <Trash2 size={12} />
+                        <span className="hidden sm:inline">Clear</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Filter Pills */}
+                  <div className="flex gap-2 mb-3 bg-zinc-50 dark:bg-zinc-950 p-1 rounded-xl border border-zinc-200/30 dark:border-zinc-800/30">
+                    <button
+                      onClick={() => setNotifFilter('ALL')}
+                      className={`flex-1 text-center py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
+                        notifFilter === 'ALL'
+                          ? 'bg-white dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 shadow-sm border border-zinc-200/20'
+                          : 'text-slate-400 hover:text-slate-600 dark:hover:text-zinc-300'
+                      }`}
+                    >
+                      All
+                    </button>
+                    <button
+                      onClick={() => setNotifFilter('UNREAD')}
+                      className={`flex-1 text-center py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
+                        notifFilter === 'UNREAD'
+                          ? 'bg-white dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 shadow-sm border border-zinc-200/20'
+                          : 'text-slate-400 hover:text-slate-600 dark:hover:text-zinc-300'
+                      }`}
+                    >
+                      Unread ({notifications.filter(n => n.tenantId === activeTenant.id && !n.isRead).length})
+                    </button>
+                  </div>
+
+                  {/* Notifications List */}
+                  <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
+                    {notifications
+                      .filter(n => n.tenantId === activeTenant.id && (notifFilter === 'ALL' || !n.isRead))
+                      .map((n) => {
+                        return (
+                          <div
+                            key={n.id}
+                            onClick={() => handleNotificationClick(n)}
+                            className={`flex items-start gap-3 p-3 rounded-2xl border transition-all cursor-pointer relative group text-left ${
+                              n.isRead
+                                ? 'border-zinc-100 dark:border-zinc-800/40 bg-zinc-50/30 dark:bg-zinc-900/10 hover:bg-zinc-100/50 dark:hover:bg-zinc-900/20'
+                                : 'border-indigo-500/25 bg-indigo-500/5 dark:bg-indigo-500/5 hover:bg-indigo-500/10 dark:hover:bg-indigo-500/10 shadow-sm'
+                            }`}
+                          >
+                            {/* Unread indicator dot */}
+                            {!n.isRead && (
+                              <span className="absolute top-3.5 right-3 h-1.5 w-1.5 rounded-full bg-indigo-500" />
+                            )}
+
+                            {/* Icon */}
+                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-zinc-150/50 dark:bg-zinc-800/50 border border-zinc-200/20 dark:border-zinc-800/20 mt-0.5">
+                              {getNotificationIcon(n.module, n.type)}
+                            </div>
+
+                            {/* Text Content */}
+                            <div className="min-w-0 flex-1 pr-4">
+                              <p className={`text-xs font-bold leading-normal truncate ${
+                                n.isRead ? 'text-slate-700 dark:text-zinc-300' : 'text-slate-900 dark:text-zinc-50'
+                              }`}>
+                                {n.title}
+                              </p>
+                              <p className="text-[10px] text-slate-400 dark:text-zinc-500 mt-0.5 leading-normal">
+                                {n.message}
+                              </p>
+                              <span className="text-[9px] font-mono text-slate-400 dark:text-zinc-550 mt-1 block">
+                                {formatTimeAgo(n.createdAt)}
+                              </span>
+                            </div>
+
+                            {/* Actions on Hover */}
+                            <div 
+                              className="absolute right-2.5 bottom-2.5 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              {!n.isRead && (
+                                <button
+                                  onClick={() => markAsRead(n.id)}
+                                  className="h-5 w-5 rounded-md flex items-center justify-center bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-500 transition-all cursor-pointer"
+                                  title="Mark as read"
+                                >
+                                  <Check size={10} />
+                                </button>
+                              )}
+                              <button
+                                onClick={() => deleteNotification(n.id)}
+                                className="h-5 w-5 rounded-md flex items-center justify-center bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 transition-all cursor-pointer"
+                                title="Remove"
+                              >
+                                <X size={10} />
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+
+                    {/* Empty State */}
+                    {notifications.filter(n => n.tenantId === activeTenant.id && (notifFilter === 'ALL' || !n.isRead)).length === 0 && (
+                      <div className="flex flex-col items-center justify-center py-10 text-center text-slate-400 dark:text-zinc-500">
+                        <Inbox size={24} className="mb-2 text-slate-350 dark:text-zinc-650 animate-bounce" />
+                        <p className="text-xs font-bold">Inbox is clear</p>
+                        <p className="text-[10px] mt-0.5">No new alerts to display.</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
 
             {/* SEPARATOR */}
             <div className="h-6 w-px bg-zinc-200 dark:bg-zinc-800/60" />
