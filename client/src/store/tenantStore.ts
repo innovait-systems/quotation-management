@@ -673,6 +673,8 @@ export const useTenantStore = create<TenantState>()(
             authorizedPersons: updates.authorizedPersons,
             bankDetails: updates.bankDetails,
             numberingFormats: updates.numberingFormats,
+            features: get().activeTenant.features,
+            rolePermissions: get().activeTenant.rolePermissions,
           };
 
           const activeTenantId = get().activeTenant.id;

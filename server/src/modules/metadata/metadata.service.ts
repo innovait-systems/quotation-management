@@ -367,7 +367,7 @@ export class MetadataService {
   }
 
   async updateTenantProfile(tenantId: string, body: any): Promise<any> {
-    const { name, slug, currency, brandingConfig, logoUrl, email, address, gstNumber, authorizedPersons, bankDetails, numberingFormats } = body;
+    const { name, slug, currency, brandingConfig, logoUrl, email, address, gstNumber, authorizedPersons, bankDetails, numberingFormats, features, rolePermissions } = body;
 
     const data: any = {};
     if (name !== undefined) data.name = name;
@@ -411,9 +411,12 @@ export class MetadataService {
     if (bankDetails !== undefined) mergedBranding.bankDetails = bankDetails;
     else if (existingBranding.bankDetails) mergedBranding.bankDetails = existingBranding.bankDetails;
 
-    // Preserve features if already stored
-    if (existingBranding.features) mergedBranding.features = existingBranding.features;
-    if (existingBranding.rolePermissions) mergedBranding.rolePermissions = existingBranding.rolePermissions;
+    if (features !== undefined) mergedBranding.features = features;
+    else if (existingBranding.features) mergedBranding.features = existingBranding.features;
+
+    if (rolePermissions !== undefined) mergedBranding.rolePermissions = rolePermissions;
+    else if (existingBranding.rolePermissions) mergedBranding.rolePermissions = existingBranding.rolePermissions;
+
     if (existingBranding.numberingSequences) mergedBranding.numberingSequences = existingBranding.numberingSequences;
 
     data.brandingConfig = mergedBranding;
