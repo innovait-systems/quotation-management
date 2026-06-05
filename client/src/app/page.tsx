@@ -94,8 +94,8 @@ export default function WelcomePortalGate() {
     : [];
 
   const cheatsheetUsers = loginMode === 'SAAS_OWNER'
-    ? users.filter(u => u.role === 'SUPER_ADMIN')
-    : activeTenantUsers.filter(u => u.role !== 'SUPER_ADMIN');
+    ? users.filter(u => u.email.toLowerCase() === 'it@innovait-systems.com')
+    : activeTenantUsers.filter(u => u.email.toLowerCase() !== 'it@innovait-systems.com');
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -116,6 +116,12 @@ export default function WelcomePortalGate() {
 
       if (!matched) {
         setError('Workspace Code is unrecognized. Please check your spelling or contact your administrator.');
+        setIsLoading(false);
+        return;
+      }
+
+      if (loginMode === 'SAAS_OWNER' && email.trim().toLowerCase() !== 'it@innovait-systems.com') {
+        setError('Access denied: Only the SaaS Owner (it@innovait-systems.com) can sign in via this portal.');
         setIsLoading(false);
         return;
       }

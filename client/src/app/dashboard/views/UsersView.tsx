@@ -60,6 +60,7 @@ const ROLE_CONFIG: Record<UserRole, { label: string; color: string; bgColor: str
 };
 
 const ALL_ROLES: UserRole[] = ['SUPER_ADMIN', 'TENANT_ADMIN', 'FINANCE', 'SALES', 'OPERATIONS', 'VIEWER'];
+const ASSIGNABLE_ROLES: UserRole[] = ['TENANT_ADMIN', 'FINANCE', 'SALES', 'OPERATIONS', 'VIEWER'];
 
 export default function UsersView() {
   const { activeTenant, currentUser, activeRole, users, addUser, updateUser, deleteUser, switchUser } = useTenantStore();
@@ -359,13 +360,13 @@ export default function UsersView() {
                 {/* Status */}
                 <div className="col-span-2">
                   <button
-                    onClick={() => canManageUsers && !isCurrentUser && toggleUserActive(user)}
-                    disabled={!canManageUsers || isCurrentUser}
+                    onClick={() => canManageUsers && !isCurrentUser && user.email.toLowerCase() !== 'it@innovait-systems.com' && toggleUserActive(user)}
+                    disabled={!canManageUsers || isCurrentUser || user.email.toLowerCase() === 'it@innovait-systems.com'}
                     className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-bold transition-all ${
                       user.isActive
                         ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400'
                         : 'bg-zinc-500/10 border border-zinc-500/20 text-zinc-500 dark:text-zinc-400'
-                    } ${canManageUsers && !isCurrentUser ? 'cursor-pointer hover:scale-105' : 'cursor-default'}`}
+                    } ${canManageUsers && !isCurrentUser && user.email.toLowerCase() !== 'it@innovait-systems.com' ? 'cursor-pointer hover:scale-105' : 'cursor-default'}`}
                   >
                     <span className={`h-1.5 w-1.5 rounded-full ${user.isActive ? 'bg-emerald-500' : 'bg-zinc-400'}`} />
                     {user.isActive ? 'Active' : 'Inactive'}
@@ -381,7 +382,7 @@ export default function UsersView() {
 
                 {/* Actions */}
                 <div className="col-span-2 flex items-center justify-end gap-2">
-                  {canManageUsers && (
+                  {canManageUsers && user.email.toLowerCase() !== 'it@innovait-systems.com' && (
                     <>
                       <button
                         onClick={() => openEditModal(user)}
@@ -492,7 +493,7 @@ export default function UsersView() {
               <div className="space-y-2">
                 <label className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400">RBAC Role</label>
                 <div className="grid grid-cols-2 gap-2">
-                  {ALL_ROLES.map(role => {
+                  {ASSIGNABLE_ROLES.map(role => {
                     const config = ROLE_CONFIG[role];
                     const isSelected = newRole === role;
                     return (
@@ -604,7 +605,7 @@ export default function UsersView() {
               <div className="space-y-2">
                 <label className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400">RBAC Role</label>
                 <div className="grid grid-cols-2 gap-2">
-                  {ALL_ROLES.map(role => {
+                  {ASSIGNABLE_ROLES.map(role => {
                     const config = ROLE_CONFIG[role];
                     const isSelected = editRole === role;
                     return (

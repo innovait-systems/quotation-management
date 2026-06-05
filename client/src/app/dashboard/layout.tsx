@@ -150,7 +150,7 @@ export default function DashboardLayout({
       PURCHASE_ORDERS: 'PURCHASE_ORDERS',
       SERVICES: 'SERVICES',
       USERS: 'USERS',
-      SYSTEM: activeRole === 'SUPER_ADMIN' ? 'COMPANIES' : 'SETTINGS',
+      SYSTEM: (activeRole === 'SUPER_ADMIN' && currentUser.email.toLowerCase() === 'it@innovait-systems.com') ? 'COMPANIES' : 'SETTINGS',
     };
 
     const targetTab = targetTabMap[n.module];
@@ -200,10 +200,20 @@ export default function DashboardLayout({
   React.useEffect(() => {
     if (!isMounted || !isAuthenticated) return;
 
-    const isTabAllowed = sidebarItems.find(item => item.tab === currentTab && item.roles.includes(activeRole));
+    const isTabAllowed = sidebarItems.find(item => {
+      if ((item.tab === 'COMPANIES' || item.tab === 'SAAS_SUBSCRIPTIONS') && currentUser.email.toLowerCase() !== 'it@innovait-systems.com') {
+        return false;
+      }
+      return item.tab === currentTab && item.roles.includes(activeRole);
+    });
     if (!isTabAllowed) {
       // Find the first allowed tab for this role
-      const firstAllowedItem = sidebarItems.find(item => item.roles.includes(activeRole));
+      const firstAllowedItem = sidebarItems.find(item => {
+        if ((item.tab === 'COMPANIES' || item.tab === 'SAAS_SUBSCRIPTIONS') && currentUser.email.toLowerCase() !== 'it@innovait-systems.com') {
+          return false;
+        }
+        return item.roles.includes(activeRole);
+      });
       if (firstAllowedItem) {
         setCurrentTab(firstAllowedItem.tab);
       }
@@ -287,6 +297,9 @@ export default function DashboardLayout({
 
   // Filter navigation items dynamically based on mock role clearance and active tenant features!
   const allowedItems = sidebarItems.filter(item => {
+    if ((item.tab === 'COMPANIES' || item.tab === 'SAAS_SUBSCRIPTIONS') && currentUser.email.toLowerCase() !== 'it@innovait-systems.com') {
+      return false;
+    }
     if (!item.roles.includes(activeRole)) return false;
     if (item.tab === 'AI_COPILOT' && !activeTenant.features.ai_copilot) return false;
     if (item.tab === 'COMPLIANCE' && !activeTenant.features.audit_trail) return false;

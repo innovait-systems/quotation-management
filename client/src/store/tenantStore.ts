@@ -539,9 +539,16 @@ export const useTenantStore = create<TenantState>()(
               rolePermissions: res.tenant.rolePermissions || defaultRolePermissions,
             };
 
+            const resolvedRole = (res.user.role === 'SUPER_ADMIN' && res.user.email.toLowerCase() !== 'it@innovait-systems.com')
+              ? 'TENANT_ADMIN'
+              : res.user.role;
+
             set({
-              currentUser: res.user,
-              activeRole: res.user.role,
+              currentUser: {
+                ...res.user,
+                role: resolvedRole
+              },
+              activeRole: resolvedRole,
               activeTenant: tenantWithFeatures,
               isAuthenticated: true,
             });
@@ -578,10 +585,17 @@ export const useTenantStore = create<TenantState>()(
           ? state.users 
           : [...state.users, ...newWorkspaceUsers];
 
+        const resolvedRole = (newCurrentUser.role === 'SUPER_ADMIN' && newCurrentUser.email.toLowerCase() !== 'it@innovait-systems.com')
+          ? 'TENANT_ADMIN'
+          : newCurrentUser.role;
+
         return { 
           activeTenant: tenant, 
-          currentUser: newCurrentUser,
-          activeRole: newCurrentUser.role,
+          currentUser: {
+            ...newCurrentUser,
+            role: resolvedRole
+          },
+          activeRole: resolvedRole,
           users: updatedUsers,
         };
       }),
@@ -850,11 +864,18 @@ export const useTenantStore = create<TenantState>()(
           const nextUser = tenantUsers.length > 0 ? tenantUsers[0] : newWorkspaceUsers[0];
           const updatedUsers = tenantUsers.length > 0 ? finalUsers : [...finalUsers, ...newWorkspaceUsers];
           
+          const resolvedRole = (nextUser.role === 'SUPER_ADMIN' && nextUser.email.toLowerCase() !== 'it@innovait-systems.com')
+            ? 'TENANT_ADMIN'
+            : nextUser.role;
+
           return {
             tenantsList: updatedList,
             activeTenant: nextActive,
-            currentUser: nextUser,
-            activeRole: nextUser.role,
+            currentUser: {
+              ...nextUser,
+              role: resolvedRole
+            },
+            activeRole: resolvedRole,
             users: updatedUsers
           };
         }
@@ -949,10 +970,17 @@ export const useTenantStore = create<TenantState>()(
         const updatedCurrentUser = state.currentUser.id === userId
           ? { ...state.currentUser, ...updates }
           : state.currentUser;
+        const resolvedRole = (updatedCurrentUser.role === 'SUPER_ADMIN' && updatedCurrentUser.email.toLowerCase() !== 'it@innovait-systems.com')
+          ? 'TENANT_ADMIN'
+          : updatedCurrentUser.role;
+
         return {
           users: updatedUsers,
-          currentUser: updatedCurrentUser,
-          activeRole: updatedCurrentUser.role,
+          currentUser: {
+            ...updatedCurrentUser,
+            role: resolvedRole
+          },
+          activeRole: resolvedRole,
         };
       }),
 
@@ -978,9 +1006,15 @@ export const useTenantStore = create<TenantState>()(
       switchUser: (userId) => set((state) => {
         const user = state.users.find(u => u.id === userId);
         if (!user || !user.isActive) return {};
+        const resolvedRole = (user.role === 'SUPER_ADMIN' && user.email.toLowerCase() !== 'it@innovait-systems.com')
+          ? 'TENANT_ADMIN'
+          : user.role;
         return {
-          currentUser: user,
-          activeRole: user.role,
+          currentUser: {
+            ...user,
+            role: resolvedRole
+          },
+          activeRole: resolvedRole,
         };
       }),
 

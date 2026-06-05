@@ -911,7 +911,7 @@ export default function CompaniesView() {
                       <p className="font-bold text-slate-800 dark:text-zinc-200">{user.firstName} {user.lastName}</p>
                       <p className="text-[10px] text-slate-400 dark:text-zinc-500">{user.email} &bull; <span className="font-semibold text-indigo-500">{user.role}</span></p>
                     </div>
-                    {users.filter(u => u.tenantId === selectedTenant.id).length > 1 && (
+                    {users.filter(u => u.tenantId === selectedTenant.id).length > 1 && user.email.toLowerCase() !== 'it@innovait-systems.com' && (
                       <button
                         onClick={() => deleteUser(user.id)}
                         className="p-1 rounded-md text-rose-500 hover:bg-rose-500/10 transition-colors"

@@ -149,6 +149,12 @@ export class GovernanceService {
       );
     }
 
+    if (mappedRole === UserRole.SUPER_ADMIN && email.toLowerCase() !== 'it@innovait-systems.com') {
+      throw new BadRequestException(
+        'Access denied: The SUPER_ADMIN role can only be held by the SaaS Owner account (it@innovait-systems.com).',
+      );
+    }
+
     // 5. Create user record
     const user = await this.prisma.user.create({
       data: {
