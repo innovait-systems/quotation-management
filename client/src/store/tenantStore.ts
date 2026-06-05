@@ -548,11 +548,31 @@ export const useTenantStore = create<TenantState>()(
               localStorage.setItem('innovait-auth-token', res.accessToken);
             }
             
+            const rawBranding = res.tenant.brandingConfig || {};
             const tenantWithFeatures = {
               ...res.tenant,
-              brandingConfig: normalizeBrandingConfig(res.tenant.brandingConfig),
-              features: res.tenant.features || defaultFeatures,
-              rolePermissions: res.tenant.rolePermissions || defaultRolePermissions,
+              brandingConfig: normalizeBrandingConfig(rawBranding),
+              features: rawBranding.features || res.tenant.features || defaultFeatures,
+              rolePermissions: rawBranding.rolePermissions || res.tenant.rolePermissions || defaultRolePermissions,
+              address: rawBranding.address || res.tenant.address || '',
+              gstNumber: rawBranding.gstNumber || res.tenant.gstNumber || '',
+              email: rawBranding.email || res.tenant.email || '',
+              logoUrl: res.tenant.logoUrl || rawBranding.logoUrl || '',
+              authorizedPersons: rawBranding.authorizedPersons || res.tenant.authorizedPersons || [],
+              bankDetails: rawBranding.bankDetails || res.tenant.bankDetails || {
+                accountNo: '',
+                beneficiaryName: '',
+                bankName: '',
+                ifscCode: '',
+                swiftCode: '',
+                branch: ''
+              },
+              numberingSequences: rawBranding.numberingSequences || (res.tenant.numberingFormats ? res.tenant.numberingFormats.sequences : null) || {
+                QUOTATION: 1,
+                PURCHASE_ORDER: 1,
+                INVOICE: 1,
+                SERVICE: 1
+              }
             };
 
             const resolvedRole = (res.user.role === 'SUPER_ADMIN' && res.user.email.toLowerCase() !== 'it@innovait-systems.com')
@@ -642,6 +662,7 @@ export const useTenantStore = create<TenantState>()(
             name: updates.name,
             slug: updates.slug,
             currency: updates.currency,
+            logoUrl: updates.logoUrl,
             brandingConfig: (updates.primaryColor || updates.secondaryColor) ? {
               primary: updates.primaryColor,
               secondary: updates.secondaryColor,
@@ -649,6 +670,9 @@ export const useTenantStore = create<TenantState>()(
             address: updates.address,
             gstNumber: updates.gstNumber,
             email: updates.email,
+            authorizedPersons: updates.authorizedPersons,
+            bankDetails: updates.bankDetails,
+            numberingFormats: updates.numberingFormats,
           };
 
           const activeTenantId = get().activeTenant.id;
@@ -817,11 +841,31 @@ export const useTenantStore = create<TenantState>()(
             });
           }
 
+          const rawBranding = tenantRes.brandingConfig || {};
           const updatedTenant = {
             ...tenantRes,
-            brandingConfig: normalizeBrandingConfig(tenantRes.brandingConfig || newTenantData.brandingConfig),
-            features: tenantRes.features || defaultFeatures,
-            rolePermissions: tenantRes.rolePermissions || defaultRolePermissions
+            brandingConfig: normalizeBrandingConfig(rawBranding),
+            features: rawBranding.features || tenantRes.features || defaultFeatures,
+            rolePermissions: rawBranding.rolePermissions || tenantRes.rolePermissions || defaultRolePermissions,
+            address: rawBranding.address || tenantRes.address || '',
+            gstNumber: rawBranding.gstNumber || tenantRes.gstNumber || '',
+            email: rawBranding.email || tenantRes.email || '',
+            logoUrl: tenantRes.logoUrl || rawBranding.logoUrl || '',
+            authorizedPersons: rawBranding.authorizedPersons || tenantRes.authorizedPersons || [],
+            bankDetails: rawBranding.bankDetails || tenantRes.bankDetails || {
+              accountNo: '',
+              beneficiaryName: '',
+              bankName: '',
+              ifscCode: '',
+              swiftCode: '',
+              branch: ''
+            },
+            numberingSequences: rawBranding.numberingSequences || (tenantRes.numberingFormats ? tenantRes.numberingFormats.sequences : null) || {
+              QUOTATION: 1,
+              PURCHASE_ORDER: 1,
+              INVOICE: 1,
+              SERVICE: 1
+            }
           };
 
           const newWorkspaceUsers = createDefaultUsers(tenantRes.id, tenantRes.slug, defaultAdminPassword);
