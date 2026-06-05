@@ -90,6 +90,11 @@ export class AuthService {
         id: tenant.id,
         name: tenant.name,
         slug: tenant.slug,
+        currency: tenant.currency,
+        brandingConfig: tenant.brandingConfig,
+        plan: tenant.plan,
+        logoUrl: tenant.logoUrl,
+        numberingFormats: tenant.numberingFormats,
       },
     };
   }
