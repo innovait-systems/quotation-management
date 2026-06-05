@@ -81,8 +81,25 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { activeTenant, tenantsList, currentUser, activeRole, users, setActiveTenant, switchUser, addTenant, isAuthenticated, logout } = useTenantStore();
+  const { activeTenant, tenantsList, currentUser, activeRole, users, setActiveTenant, switchUser, addTenant, isAuthenticated, logout, isSaaSAdminSession } = useTenantStore();
   const { currentTab, setCurrentTab, sidebarCollapsed, toggleSidebar, theme, toggleTheme, setTheme } = useDashboardStore();
+
+  // Filter navigation items dynamically based on mock role clearance and active tenant features!
+  const allowedItems = sidebarItems.filter(item => {
+    if (isSaaSAdminSession) {
+      // SaaS Platform Administration view: Only allow Companies (Organizations) and Subscriptions
+      return item.tab === 'COMPANIES' || item.tab === 'SAAS_SUBSCRIPTIONS';
+    } else {
+      // Company view: Do NOT show global SaaS administration tabs
+      if (item.tab === 'COMPANIES' || item.tab === 'SAAS_SUBSCRIPTIONS') {
+        return false;
+      }
+      if (!item.roles.includes(activeRole)) return false;
+      if (item.tab === 'AI_COPILOT' && !activeTenant.features.ai_copilot) return false;
+      if (item.tab === 'COMPLIANCE' && !activeTenant.features.audit_trail) return false;
+      return true;
+    }
+  });
   const router = useRouter();
   
   const [orgDropdownOpen, setOrgDropdownOpen] = useState(false);
@@ -200,25 +217,15 @@ export default function DashboardLayout({
   React.useEffect(() => {
     if (!isMounted || !isAuthenticated) return;
 
-    const isTabAllowed = sidebarItems.find(item => {
-      if ((item.tab === 'COMPANIES' || item.tab === 'SAAS_SUBSCRIPTIONS') && currentUser.email.toLowerCase() !== 'it@innovait-systems.com') {
-        return false;
-      }
-      return item.tab === currentTab && item.roles.includes(activeRole);
-    });
+    const isTabAllowed = allowedItems.some(item => item.tab === currentTab);
     if (!isTabAllowed) {
-      // Find the first allowed tab for this role
-      const firstAllowedItem = sidebarItems.find(item => {
-        if ((item.tab === 'COMPANIES' || item.tab === 'SAAS_SUBSCRIPTIONS') && currentUser.email.toLowerCase() !== 'it@innovait-systems.com') {
-          return false;
-        }
-        return item.roles.includes(activeRole);
-      });
+      // Find the first allowed tab for this session
+      const firstAllowedItem = allowedItems[0];
       if (firstAllowedItem) {
         setCurrentTab(firstAllowedItem.tab);
       }
     }
-  }, [isMounted, isAuthenticated, activeRole, currentTab, setCurrentTab]);
+  }, [isMounted, isAuthenticated, allowedItems, currentTab, setCurrentTab]);
 
   // Filter users for the current workspace
   const tenantUsers = users.filter(u => u.tenantId === activeTenant.id && u.isActive);
@@ -294,17 +301,6 @@ export default function DashboardLayout({
       root.classList.remove('dark');
     }
   }, [theme]);
-
-  // Filter navigation items dynamically based on mock role clearance and active tenant features!
-  const allowedItems = sidebarItems.filter(item => {
-    if ((item.tab === 'COMPANIES' || item.tab === 'SAAS_SUBSCRIPTIONS') && currentUser.email.toLowerCase() !== 'it@innovait-systems.com') {
-      return false;
-    }
-    if (!item.roles.includes(activeRole)) return false;
-    if (item.tab === 'AI_COPILOT' && !activeTenant.features.ai_copilot) return false;
-    if (item.tab === 'COMPLIANCE' && !activeTenant.features.audit_trail) return false;
-    return true;
-  });
 
   if (isAuthChecking || !isAuthenticated) {
     return (

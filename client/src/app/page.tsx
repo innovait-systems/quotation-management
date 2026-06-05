@@ -126,7 +126,13 @@ export default function WelcomePortalGate() {
         return;
       }
 
-      const success = await login(email.trim().toLowerCase(), matched.id, password);
+      if (loginMode === 'COMPANY' && email.trim().toLowerCase() === 'it@innovait-systems.com') {
+        setError('This account is reserved for the SaaS Owner portal. Please use the "SaaS Owner" login mode to sign in with this credential.');
+        setIsLoading(false);
+        return;
+      }
+
+      const success = await login(email.trim().toLowerCase(), matched.id, password, loginMode === 'SAAS_OWNER');
       if (success) {
         // Apply success animation and redirect
         router.push('/dashboard');
@@ -140,13 +146,20 @@ export default function WelcomePortalGate() {
   const handleQuickLogin = (selectedUser: User) => {
     const targetTenantId = loginMode === 'SAAS_OWNER' ? 'tenant-innovait' : (matchedTenant?.id);
     if (!targetTenantId) return;
+
+    // Block SaaS Owner email from Company portal quick login
+    if (loginMode === 'COMPANY' && selectedUser.email.toLowerCase() === 'it@innovait-systems.com') {
+      setError('This account is reserved for the SaaS Owner portal. Please use the "SaaS Owner" login mode.');
+      return;
+    }
+
     setError(null);
     setIsLoading(true);
     setEmail(selectedUser.email);
     setPassword('password');
 
     setTimeout(async () => {
-      const success = await login(selectedUser.email, targetTenantId, selectedUser.password || 'password');
+      const success = await login(selectedUser.email, targetTenantId, selectedUser.password || 'password', loginMode === 'SAAS_OWNER');
       if (success) {
         router.push('/dashboard');
       } else {

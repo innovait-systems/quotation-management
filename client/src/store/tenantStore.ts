@@ -186,7 +186,8 @@ interface TenantState {
   activeRole: UserRole;
   users: User[];
   isAuthenticated: boolean;
-  login: (email: string, tenantId: string, password?: string) => Promise<boolean>;
+  isSaaSAdminSession: boolean;
+  login: (email: string, tenantId: string, password?: string, isSaaSGateway?: boolean) => Promise<boolean>;
   logout: () => void;
   setActiveTenant: (tenantId: string) => void;
   toggleTenantFeature: (featureId: keyof TenantFeatures) => void;
@@ -523,8 +524,9 @@ export const useTenantStore = create<TenantState>()(
       activeRole: defaultAdminUser.role,
       users: defaultUsersList,
       isAuthenticated: false,
+      isSaaSAdminSession: false,
 
-      login: async (email, tenantId, password) => {
+      login: async (email, tenantId, password, isSaaSGateway) => {
         try {
           const res = await apiRequest('/api/v1/auth/login', {
             method: 'POST',
@@ -536,6 +538,12 @@ export const useTenantStore = create<TenantState>()(
           });
           
           if (res.accessToken) {
+            // Guard: Block SAAS Owner email from Company portal login context
+            if (!isSaaSGateway && res.user.email.toLowerCase() === 'it@innovait-systems.com') {
+              console.warn('Login blocked: SaaS Owner email cannot be used in Company portal context.');
+              return false;
+            }
+
             if (typeof window !== 'undefined') {
               localStorage.setItem('innovait-auth-token', res.accessToken);
             }
@@ -551,14 +559,19 @@ export const useTenantStore = create<TenantState>()(
               ? 'TENANT_ADMIN'
               : res.user.role;
 
+            const activeSessionRole = (res.user.email.toLowerCase() === 'it@innovait-systems.com')
+              ? (isSaaSGateway ? 'SUPER_ADMIN' : 'TENANT_ADMIN')
+              : resolvedRole;
+
             set({
               currentUser: {
                 ...res.user,
-                role: resolvedRole
+                role: activeSessionRole
               },
-              activeRole: resolvedRole,
+              activeRole: activeSessionRole,
               activeTenant: tenantWithFeatures,
               isAuthenticated: true,
+              isSaaSAdminSession: !!isSaaSGateway,
             });
             return true;
           }
@@ -573,7 +586,7 @@ export const useTenantStore = create<TenantState>()(
         if (typeof window !== 'undefined') {
           localStorage.removeItem('innovait-auth-token');
         }
-        set({ isAuthenticated: false });
+        set({ isAuthenticated: false, isSaaSAdminSession: false });
       },
 
       setActiveTenant: (tenantId) => set((state) => {
