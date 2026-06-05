@@ -10,7 +10,7 @@ import {
 
 export default function TemplatesView() {
   const { activeTenant } = useTenantStore();
-  
+
   // Document Templates Designer State
   const {
     templates,
@@ -47,7 +47,7 @@ export default function TemplatesView() {
     const newOrder = activeTemplate.layoutOrder.filter(id => id !== spacerId);
     const spacerHeights = { ...(activeTemplate.config.spacerHeights || {}) };
     delete spacerHeights[spacerId];
-    updateTemplate(activeTemplate.id, { 
+    updateTemplate(activeTemplate.id, {
       layoutOrder: newOrder,
       config: { spacerHeights }
     });
@@ -141,8 +141,8 @@ export default function TemplatesView() {
               alignItems: activeTemplate.config.headerAlign === 'left'
                 ? 'flex-start'
                 : activeTemplate.config.headerAlign === 'right'
-                ? 'flex-end'
-                : 'center',
+                  ? 'flex-end'
+                  : 'center',
               textAlign: activeTemplate.config.headerAlign
             }}
           >
@@ -165,8 +165,8 @@ export default function TemplatesView() {
               alignItems: activeTemplate.config.headerAlign === 'left'
                 ? 'flex-start'
                 : activeTemplate.config.headerAlign === 'right'
-                ? 'flex-end'
-                : 'center',
+                  ? 'flex-end'
+                  : 'center',
               textAlign: activeTemplate.config.headerAlign
             }}
           >
@@ -187,8 +187,8 @@ export default function TemplatesView() {
               alignItems: activeTemplate.config.headerAlign === 'left'
                 ? 'flex-start'
                 : activeTemplate.config.headerAlign === 'right'
-                ? 'flex-end'
-                : 'center',
+                  ? 'flex-end'
+                  : 'center',
               textAlign: activeTemplate.config.headerAlign
             }}
           >
@@ -207,8 +207,8 @@ export default function TemplatesView() {
               alignItems: activeTemplate.config.headerAlign === 'left'
                 ? 'flex-start'
                 : activeTemplate.config.headerAlign === 'right'
-                ? 'flex-end'
-                : 'center',
+                  ? 'flex-end'
+                  : 'center',
               textAlign: activeTemplate.config.headerAlign
             }}
           >
@@ -233,13 +233,12 @@ export default function TemplatesView() {
       case 'company_details': {
         const isCard = (activeTemplate.config.blockStyles?.['company_details'] || 'plain') === 'card';
         return (
-          <div 
-            key="company_details" 
-            className={`text-[10px] flex flex-col gap-0.5 animate-in fade-in duration-300 ${
-              isCard 
-                ? 'bg-slate-50 p-3.5 rounded-2xl border border-slate-100/85 text-slate-600 shadow-2xs' 
+          <div
+            key="company_details"
+            className={`text-[10px] flex flex-col gap-0.5 animate-in fade-in duration-300 ${isCard
+                ? 'bg-slate-50 p-3.5 rounded-2xl border border-slate-100/85 text-slate-600 shadow-2xs'
                 : 'text-slate-500'
-            }`}
+              }`}
           >
             <span className="text-[8px] font-extrabold text-slate-400 uppercase tracking-widest block mb-1">Company Details</span>
             <span className="font-semibold text-slate-700">{activeTenant.name}</span>
@@ -251,13 +250,12 @@ export default function TemplatesView() {
       case 'customer_details': {
         const isCard = (activeTemplate.config.blockStyles?.['customer_details'] || 'card') !== 'plain';
         return (
-          <div 
-            key="customer_details" 
-            className={`flex flex-col gap-1 text-[11px] animate-in fade-in duration-300 ${
-              isCard 
-                ? 'bg-slate-50 p-3.5 rounded-2xl border border-slate-100 shadow-2xs' 
+          <div
+            key="customer_details"
+            className={`flex flex-col gap-1 text-[11px] animate-in fade-in duration-300 ${isCard
+                ? 'bg-slate-50 p-3.5 rounded-2xl border border-slate-100 shadow-2xs'
                 : 'text-slate-500'
-            }`}
+              }`}
           >
             <span className="text-[8px] font-extrabold text-slate-400 uppercase tracking-widest block mb-1">
               {selectedTemplateEntity === 'PURCHASE_ORDER' ? 'SUPPLIER / VENDOR' : 'CLIENT RECIPIENT'}
@@ -272,13 +270,12 @@ export default function TemplatesView() {
       case 'details_box': {
         const isCard = (activeTemplate.config.blockStyles?.['details_box'] || 'card') !== 'plain';
         return (
-          <div 
-            key="details_box" 
-            className={`flex flex-col gap-2 text-[11px] animate-in fade-in duration-300 ${
-              isCard 
-                ? 'bg-white border border-slate-200 p-3.5 rounded-2xl shadow-xs' 
+          <div
+            key="details_box"
+            className={`flex flex-col gap-2 text-[11px] animate-in fade-in duration-300 ${isCard
+                ? 'bg-white border border-slate-200 p-3.5 rounded-2xl shadow-xs'
                 : 'text-slate-500'
-            }`}
+              }`}
           >
             <span className="text-[8px] font-extrabold text-slate-400 uppercase tracking-widest block">DOCUMENT DETAILS</span>
             <div className="flex justify-between">
@@ -331,8 +328,8 @@ export default function TemplatesView() {
                     borderBottom: activeTemplate.config.borderStyle === 'thin'
                       ? '1px solid #f1f5f9'
                       : activeTemplate.config.borderStyle === 'dotted'
-                      ? '1px dashed #cbd5e1'
-                      : 'none'
+                        ? '1px dashed #cbd5e1'
+                        : 'none'
                   }}
                 >
                   <td className="p-2.5 font-medium">Enterprise Cloud Infrastructure Node setup</td>
@@ -346,8 +343,8 @@ export default function TemplatesView() {
                     borderBottom: activeTemplate.config.borderStyle === 'thin'
                       ? '1px solid #f1f5f9'
                       : activeTemplate.config.borderStyle === 'dotted'
-                      ? '1px dashed #cbd5e1'
-                      : 'none'
+                        ? '1px dashed #cbd5e1'
+                        : 'none'
                   }}
                 >
                   <td className="p-2.5 font-medium">SOC2 Database Integrity & Log monitors</td>
@@ -453,7 +450,7 @@ export default function TemplatesView() {
               className="text-base font-bold italic tracking-wide mt-1"
               style={{ color: activeTemplate.config.accentColor }}
             >
-              Rajesh_S.
+
             </span>
             <div className="w-[120px] h-0.5 bg-slate-200 mt-1" />
           </div>
@@ -530,11 +527,10 @@ export default function TemplatesView() {
                   setSelectedTemplateEntity(entity);
                   setSelectedTemplateId('');
                 }}
-                className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${
-                  selectedTemplateEntity === entity
+                className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${selectedTemplateEntity === entity
                     ? 'bg-white dark:bg-zinc-800 text-slate-900 dark:text-zinc-50 shadow-sm'
                     : 'text-slate-500 hover:text-slate-700 dark:text-zinc-400 dark:hover:text-zinc-300'
-                }`}
+                  }`}
               >
                 {entity.replace('_', ' ')}
               </button>
@@ -543,10 +539,10 @@ export default function TemplatesView() {
 
           {/* Designer Container */}
           <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
-            
+
             {/* 1. Designer Controls Left Column */}
             <div className="xl:col-span-5 space-y-5">
-              
+
               {/* Multiple Template Manager */}
               <div className="bg-zinc-50/50 dark:bg-zinc-900/30 p-5 rounded-2xl border border-zinc-200/40 dark:border-zinc-800/30 text-xs space-y-4">
                 <div className="flex justify-between items-center">
@@ -606,11 +602,10 @@ export default function TemplatesView() {
                       <div
                         key={tpl.id}
                         onClick={() => setSelectedTemplateId(tpl.id)}
-                        className={`flex items-center justify-between p-3 rounded-xl border transition-all cursor-pointer ${
-                          isEditing
+                        className={`flex items-center justify-between p-3 rounded-xl border transition-all cursor-pointer ${isEditing
                             ? 'bg-zinc-900/5 dark:bg-white/5 border-indigo-500 text-slate-900 dark:text-zinc-50 font-bold'
                             : 'bg-white dark:bg-zinc-950 border-zinc-200/50 dark:border-zinc-800/40 text-slate-500 hover:text-slate-700 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-900/40'
-                        }`}
+                          }`}
                       >
                         <div className="flex flex-col gap-0.5">
                           <span className="text-xs truncate max-w-[150px]">{tpl.name}</span>
@@ -653,7 +648,7 @@ export default function TemplatesView() {
               <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Layout & Style Toolbox</p>
 
               <div className="space-y-4 bg-zinc-50/50 dark:bg-zinc-900/30 p-5 rounded-2xl border border-zinc-200/40 dark:border-zinc-800/30 text-xs">
-                
+
                 {/* Header Alignment */}
                 <div className="space-y-2">
                   <label className="font-bold text-slate-500 dark:text-zinc-400 block">Header Logo & Title Alignment</label>
@@ -663,11 +658,10 @@ export default function TemplatesView() {
                         key={align}
                         type="button"
                         onClick={() => updateTemplate(activeTemplate.id, { config: { headerAlign: align } })}
-                        className={`px-3 py-1.5 font-bold rounded-lg capitalize transition-all ${
-                          activeTemplate.config.headerAlign === align
+                        className={`px-3 py-1.5 font-bold rounded-lg capitalize transition-all ${activeTemplate.config.headerAlign === align
                             ? 'bg-white dark:bg-zinc-700 text-slate-800 dark:text-zinc-100 shadow-xs'
                             : 'text-slate-400 hover:text-slate-600 dark:text-zinc-400'
-                        }`}
+                          }`}
                       >
                         {align}
                       </button>
@@ -717,7 +711,7 @@ export default function TemplatesView() {
                         )}
                       </button>
                     ))}
-                    
+
                     {/* Hex Picker Input */}
                     <input
                       type="text"
@@ -759,7 +753,7 @@ export default function TemplatesView() {
                 <div className="space-y-2 pt-2">
                   <label className="font-bold text-slate-500 dark:text-zinc-400 block">Render Document Components</label>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-1 bg-white/50 dark:bg-zinc-900/20 p-3 rounded-xl border border-zinc-200/30 dark:border-zinc-800/10">
-                    
+
                     <div className="flex items-center gap-2">
                       <input
                         type="checkbox"
@@ -850,7 +844,7 @@ export default function TemplatesView() {
                   <div className="space-y-2 pt-2 border-t border-zinc-200/50 dark:border-zinc-800/30">
                     <label className="font-bold text-slate-500 dark:text-zinc-400 block">Default Line Item Columns</label>
                     <p className="text-[10px] text-slate-400 leading-normal">Configure custom columns (like UoM, Unit) that apply automatically to documents created with this template.</p>
-                    
+
                     {/* Active Columns */}
                     <div className="flex flex-wrap gap-1.5 pt-1">
                       {(!activeTemplate.config.lineItemColumns || activeTemplate.config.lineItemColumns.length === 0) ? (
@@ -969,7 +963,7 @@ export default function TemplatesView() {
               {/* Overrides */}
               <div className="space-y-4 bg-zinc-50/50 dark:bg-zinc-900/30 p-5 rounded-2xl border border-zinc-200/40 dark:border-zinc-800/30 text-xs">
                 <label className="font-bold text-slate-500 dark:text-zinc-400 block uppercase tracking-wider text-[10px]">Branding Overrides</label>
-                
+
                 <div className="space-y-3">
                   {/* Logo override */}
                   <div className="space-y-1.5">
@@ -1020,7 +1014,7 @@ export default function TemplatesView() {
                   </button>
                 </div>
                 <p className="text-[10px] text-slate-400 leading-relaxed mb-2">Drag cards up/down to customize print ordering. Rearrangement renders reactively in the preview mockup.</p>
-                
+
                 <div className="space-y-2">
                   {activeTemplate.layoutOrder.map((blockId, idx) => {
                     const blockLabels: Record<string, string> = {
@@ -1046,7 +1040,7 @@ export default function TemplatesView() {
                     const isDragging = draggingIndex === idx;
                     const isDragOver = dragOverIndex === idx;
                     const isHidden = !!activeTemplate.config.hiddenBlocks?.[blockId];
-                    
+
                     return (
                       <div
                         key={blockId}
@@ -1074,23 +1068,20 @@ export default function TemplatesView() {
                           setDraggingIndex(null);
                           setDragOverIndex(null);
                         }}
-                        className={`flex items-center gap-2 p-2.5 bg-white dark:bg-zinc-950 border rounded-xl cursor-grab active:cursor-grabbing transition-all ${
-                          isDragging ? 'opacity-40 border-indigo-500 scale-[0.98]' : 'border-zinc-200/60 dark:border-zinc-800/40 font-semibold'
-                        } ${isDragOver ? 'border-t-2 border-t-indigo-500 bg-indigo-500/5' : ''} ${
-                          isHidden ? 'opacity-50 border-dashed bg-slate-50/50 dark:bg-zinc-900/20' : ''
-                        }`}
+                        className={`flex items-center gap-2 p-2.5 bg-white dark:bg-zinc-950 border rounded-xl cursor-grab active:cursor-grabbing transition-all ${isDragging ? 'opacity-40 border-indigo-500 scale-[0.98]' : 'border-zinc-200/60 dark:border-zinc-800/40 font-semibold'
+                          } ${isDragOver ? 'border-t-2 border-t-indigo-500 bg-indigo-500/5' : ''} ${isHidden ? 'opacity-50 border-dashed bg-slate-50/50 dark:bg-zinc-900/20' : ''
+                          }`}
                       >
                         <GripVertical size={14} className="text-slate-400 shrink-0 cursor-grab" />
-                        
+
                         {/* Show/Hide block visibility toggle */}
                         <button
                           type="button"
                           onClick={() => toggleBlockVisibility(blockId)}
-                          className={`p-1 rounded transition-all hover:scale-110 shrink-0 cursor-pointer ${
-                            isHidden
+                          className={`p-1 rounded transition-all hover:scale-110 shrink-0 cursor-pointer ${isHidden
                               ? 'text-rose-500 hover:text-rose-600 bg-rose-500/10'
                               : 'text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/30 hover:bg-indigo-100'
-                          }`}
+                            }`}
                           title={isHidden ? 'Show Block' : 'Hide Block'}
                         >
                           {isHidden ? <EyeOff size={13} /> : <Eye size={13} />}
@@ -1099,7 +1090,7 @@ export default function TemplatesView() {
                         <span className="text-[11px] text-slate-700 dark:text-zinc-300">
                           {blockLabel}
                         </span>
-                        
+
                         {/* Small badge to show status */}
                         {blockId === 'upi_qr' && selectedTemplateEntity !== 'INVOICE' && (
                           <span className="text-[8px] bg-amber-500/10 text-amber-600 px-1.5 py-0.5 rounded ml-2">Invoices Only</span>
@@ -1153,11 +1144,10 @@ export default function TemplatesView() {
                                 blockStyles[blockId] = currentStyle === 'plain' ? 'card' : 'plain';
                                 updateTemplate(activeTemplate.id, { config: { blockStyles } });
                               }}
-                              className={`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-wider transition-all border cursor-pointer ${
-                                (activeTemplate.config.blockStyles?.[blockId] || (blockId === 'company_details' ? 'plain' : 'card')) === 'card'
+                              className={`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-wider transition-all border cursor-pointer ${(activeTemplate.config.blockStyles?.[blockId] || (blockId === 'company_details' ? 'plain' : 'card')) === 'card'
                                   ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800/60 font-extrabold shadow-2xs'
                                   : 'bg-zinc-50 dark:bg-zinc-900 text-slate-400 border-zinc-200 dark:border-zinc-800'
-                              }`}
+                                }`}
                             >
                               {(activeTemplate.config.blockStyles?.[blockId] || (blockId === 'company_details' ? 'plain' : 'card')) === 'card' ? 'Card BG' : 'Plain'}
                             </button>
@@ -1177,19 +1167,18 @@ export default function TemplatesView() {
                                 blockWidths[blockId] = newWidth;
                                 updateTemplate(activeTemplate.id, { config: { blockWidths } });
                               }}
-                              className={`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-wider transition-all border cursor-pointer ${
-                                (activeTemplate.config.blockWidths?.[blockId] || 'full') === 'half'
+                              className={`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-wider transition-all border cursor-pointer ${(activeTemplate.config.blockWidths?.[blockId] || 'full') === 'half'
                                   ? 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 border-indigo-200 dark:border-indigo-800/60 font-extrabold shadow-2xs'
                                   : (activeTemplate.config.blockWidths?.[blockId] || 'full') === 'third'
-                                  ? 'bg-violet-50 dark:bg-violet-950/40 text-violet-600 dark:text-violet-400 border-violet-200 dark:border-violet-800/60 font-extrabold shadow-2xs'
-                                  : 'bg-zinc-50 dark:bg-zinc-900 text-slate-400 border-zinc-200 dark:border-zinc-800'
-                              }`}
+                                    ? 'bg-violet-50 dark:bg-violet-950/40 text-violet-600 dark:text-violet-400 border-violet-200 dark:border-violet-800/60 font-extrabold shadow-2xs'
+                                    : 'bg-zinc-50 dark:bg-zinc-900 text-slate-400 border-zinc-200 dark:border-zinc-800'
+                                }`}
                             >
-                              {(activeTemplate.config.blockWidths?.[blockId] || 'full') === 'half' 
-                                ? '½ Width' 
+                              {(activeTemplate.config.blockWidths?.[blockId] || 'full') === 'half'
+                                ? '½ Width'
                                 : (activeTemplate.config.blockWidths?.[blockId] || 'full') === 'third'
-                                ? '⅓ Width'
-                                : 'Full'}
+                                  ? '⅓ Width'
+                                  : 'Full'}
                             </button>
                           )}
                         </div>
@@ -1215,13 +1204,13 @@ export default function TemplatesView() {
                   fontFamily: activeTemplate.config.fontFamily === 'Plus Jakarta Sans'
                     ? "'Plus Jakarta Sans', sans-serif"
                     : activeTemplate.config.fontFamily === 'Outfit'
-                    ? "'Outfit', sans-serif"
-                    : activeTemplate.config.fontFamily === 'Inter'
-                    ? "'Inter', sans-serif"
-                    : "'Roboto', sans-serif"
+                      ? "'Outfit', sans-serif"
+                      : activeTemplate.config.fontFamily === 'Inter'
+                        ? "'Inter', sans-serif"
+                        : "'Roboto', sans-serif"
                 }}
               >
-                
+
                 {/* Rotated watermark */}
                 {activeTenant.features.pdf_watermark && activeTemplate.config.watermarkText && (
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden z-10">
