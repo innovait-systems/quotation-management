@@ -3,6 +3,14 @@ import { persist } from 'zustand/middleware';
 import { apiRequest } from '../utils/apiClient';
 import { useNotificationStore } from './notificationStore';
 
+const normalizeBrandingConfig = (config: any): TenantBranding => {
+  if (!config) return { primary: '#6366f1', secondary: '#0f172a' };
+  return {
+    primary: config.primary || config.primaryColor || '#6366f1',
+    secondary: config.secondary || config.secondaryColor || '#0f172a',
+  };
+};
+
 export interface TenantBranding {
   primary: string;
   secondary: string;
@@ -534,7 +542,7 @@ export const useTenantStore = create<TenantState>()(
             
             const tenantWithFeatures = {
               ...res.tenant,
-              brandingConfig: res.tenant.brandingConfig || { primary: '#6366f1', secondary: '#0f172a' },
+              brandingConfig: normalizeBrandingConfig(res.tenant.brandingConfig),
               features: res.tenant.features || defaultFeatures,
               rolePermissions: res.tenant.rolePermissions || defaultRolePermissions,
             };
@@ -615,34 +623,63 @@ export const useTenantStore = create<TenantState>()(
         };
       }),
 
-      updateTenantSettings: (updates) => set((state) => {
-        const updatedTenant = {
-          ...state.activeTenant,
-          name: updates.name ?? state.activeTenant.name,
-          slug: updates.slug ?? state.activeTenant.slug,
-          currency: updates.currency ?? state.activeTenant.currency,
-          logoUrl: updates.logoUrl !== undefined ? updates.logoUrl : state.activeTenant.logoUrl,
-          address: updates.address !== undefined ? updates.address : state.activeTenant.address,
-          gstNumber: updates.gstNumber !== undefined ? updates.gstNumber : state.activeTenant.gstNumber,
-          email: updates.email !== undefined ? updates.email : state.activeTenant.email,
-          authorizedPersons: updates.authorizedPersons !== undefined ? updates.authorizedPersons : state.activeTenant.authorizedPersons,
-          bankDetails: updates.bankDetails !== undefined ? updates.bankDetails : state.activeTenant.bankDetails,
-          brandingConfig: {
-            primary: updates.primaryColor ?? state.activeTenant.brandingConfig.primary,
-            secondary: updates.secondaryColor ?? state.activeTenant.brandingConfig.secondary,
-          },
-          numberingFormats: updates.numberingFormats !== undefined
-            ? { ...state.activeTenant.numberingFormats, ...updates.numberingFormats }
-            : state.activeTenant.numberingFormats,
-          numberingSequences: updates.numberingSequences !== undefined
-            ? { ...state.activeTenant.numberingSequences, ...updates.numberingSequences }
-            : state.activeTenant.numberingSequences,
-        };
-        return {
-          activeTenant: updatedTenant,
-          tenantsList: state.tenantsList.map(t => t.id === state.activeTenant.id ? updatedTenant : t)
-        };
-      }),
+      updateTenantSettings: async (updates) => {
+        try {
+          const bodyPayload = {
+            name: updates.name,
+            slug: updates.slug,
+            currency: updates.currency,
+            brandingConfig: (updates.primaryColor || updates.secondaryColor) ? {
+              primary: updates.primaryColor,
+              secondary: updates.secondaryColor,
+            } : undefined,
+            address: updates.address,
+            gstNumber: updates.gstNumber,
+            email: updates.email,
+          };
+
+          const activeTenantId = get().activeTenant.id;
+          await apiRequest('/api/v1/metadata/tenant-profile', {
+            method: 'POST',
+            headers: {
+              'x-tenant-id': activeTenantId
+            },
+            body: JSON.stringify(bodyPayload)
+          });
+
+          set((state) => {
+            const updatedTenant = {
+              ...state.activeTenant,
+              name: updates.name ?? state.activeTenant.name,
+              slug: updates.slug ?? state.activeTenant.slug,
+              currency: updates.currency ?? state.activeTenant.currency,
+              logoUrl: updates.logoUrl !== undefined ? updates.logoUrl : state.activeTenant.logoUrl,
+              address: updates.address !== undefined ? updates.address : state.activeTenant.address,
+              gstNumber: updates.gstNumber !== undefined ? updates.gstNumber : state.activeTenant.gstNumber,
+              email: updates.email !== undefined ? updates.email : state.activeTenant.email,
+              authorizedPersons: updates.authorizedPersons !== undefined ? updates.authorizedPersons : state.activeTenant.authorizedPersons,
+              bankDetails: updates.bankDetails !== undefined ? updates.bankDetails : state.activeTenant.bankDetails,
+              brandingConfig: {
+                primary: updates.primaryColor ?? state.activeTenant.brandingConfig.primary,
+                secondary: updates.secondaryColor ?? state.activeTenant.brandingConfig.secondary,
+              },
+              numberingFormats: updates.numberingFormats !== undefined
+                ? { ...state.activeTenant.numberingFormats, ...updates.numberingFormats }
+                : state.activeTenant.numberingFormats,
+              numberingSequences: updates.numberingSequences !== undefined
+                ? { ...state.activeTenant.numberingSequences, ...updates.numberingSequences }
+                : state.activeTenant.numberingSequences,
+            };
+            return {
+              activeTenant: updatedTenant,
+              tenantsList: state.tenantsList.map(t => t.id === state.activeTenant.id ? updatedTenant : t)
+            };
+          });
+        } catch (err) {
+          console.error('Error updating tenant settings:', err);
+          alert(`Failed to save settings: ${err instanceof Error ? err.message : err}`);
+        }
+      },
 
       incrementAndGetNextNumber: (entityType) => {
         let result = '';
@@ -769,7 +806,7 @@ export const useTenantStore = create<TenantState>()(
 
           const updatedTenant = {
             ...tenantRes,
-            brandingConfig: tenantRes.brandingConfig || newTenantData.brandingConfig || { primary: '#6366f1', secondary: '#0f172a' },
+            brandingConfig: normalizeBrandingConfig(tenantRes.brandingConfig || newTenantData.brandingConfig),
             features: tenantRes.features || defaultFeatures,
             rolePermissions: tenantRes.rolePermissions || defaultRolePermissions
           };
@@ -814,31 +851,45 @@ export const useTenantStore = create<TenantState>()(
         }
       },
 
-      updateTenant: (tenantId, updates) => set((state) => {
-        const updatedList = state.tenantsList.map(t => {
-          if (t.id === tenantId) {
+      updateTenant: async (tenantId, updates) => {
+        try {
+          // Call the backend API to update the tenant in PostgreSQL database
+          await apiRequest(`/api/v1/governance/tenants/${tenantId}`, {
+            method: 'POST',
+            headers: {
+              'x-system-admin-key': 'antigravity_master_sysadmin_secret_2026'
+            },
+            body: JSON.stringify(updates)
+          });
+          
+          set((state) => {
+            const updatedList = state.tenantsList.map(t => {
+              if (t.id === tenantId) {
+                return {
+                  ...t,
+                  ...updates,
+                  brandingConfig: normalizeBrandingConfig(updates.brandingConfig || t.brandingConfig),
+                  features: updates.features
+                    ? { ...t.features, ...updates.features }
+                    : t.features,
+                };
+              }
+              return t;
+            });
+            const activeChanged = state.activeTenant.id === tenantId;
+            const updatedActive = activeChanged 
+              ? updatedList.find(t => t.id === tenantId) || state.activeTenant
+              : state.activeTenant;
             return {
-              ...t,
-              ...updates,
-              brandingConfig: updates.brandingConfig 
-                ? { ...t.brandingConfig, ...updates.brandingConfig }
-                : t.brandingConfig,
-              features: updates.features
-                ? { ...t.features, ...updates.features }
-                : t.features,
+              tenantsList: updatedList,
+              activeTenant: updatedActive
             };
-          }
-          return t;
-        });
-        const activeChanged = state.activeTenant.id === tenantId;
-        const updatedActive = activeChanged 
-          ? updatedList.find(t => t.id === tenantId) || state.activeTenant
-          : state.activeTenant;
-        return {
-          tenantsList: updatedList,
-          activeTenant: updatedActive
-        };
-      }),
+          });
+        } catch (err) {
+          console.error('Error updating tenant:', err);
+          alert(`Failed to update company: ${err instanceof Error ? err.message : err}`);
+        }
+      },
 
       deleteTenant: (tenantId) => set((state) => {
         if (state.tenantsList.length <= 1) return {};

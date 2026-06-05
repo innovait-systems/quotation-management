@@ -112,4 +112,13 @@ export class MetadataController {
     }
     return this.metadataService.resetSequence(tenantId, uppercaseType as EntityType);
   }
+
+  @Post('tenant-profile')
+  async updateTenantProfile(
+    @Headers('x-tenant-id') tenantHeader: string,
+    @Body() body: any,
+  ) {
+    const tenantId = await this.resolveTenantId(tenantHeader);
+    return this.metadataService.updateTenantProfile(tenantId, body);
+  }
 }

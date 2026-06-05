@@ -365,4 +365,27 @@ export class MetadataService {
       return updatedNumberingFormats;
     });
   }
+
+  async updateTenantProfile(tenantId: string, body: any): Promise<any> {
+    const { name, slug, currency, brandingConfig } = body;
+
+    const data: any = {};
+    if (name !== undefined) data.name = name;
+    if (slug !== undefined) data.slug = slug;
+    if (currency !== undefined) data.currency = currency;
+    if (brandingConfig !== undefined) {
+      data.brandingConfig = {
+        primaryColor: brandingConfig.primary || brandingConfig.primaryColor,
+        secondaryColor: brandingConfig.secondary || brandingConfig.secondaryColor,
+        fontFamily: brandingConfig.fontFamily || 'Outfit',
+        watermarkText: brandingConfig.watermarkText || 'ORIGINAL',
+        customCss: brandingConfig.customCss || '',
+      };
+    }
+
+    return this.prisma.tenant.update({
+      where: { id: tenantId },
+      data,
+    });
+  }
 }

@@ -183,4 +183,29 @@ export class GovernanceService {
       createdAt: user.createdAt,
     };
   }
+
+  async updateTenant(tenantId: string, body: any) {
+    const { name, slug, currency, plan, brandingConfig, features } = body;
+
+    const data: any = {};
+    if (name !== undefined) data.name = name;
+    if (slug !== undefined) data.slug = slug;
+    if (currency !== undefined) data.currency = currency;
+    if (plan !== undefined) data.plan = plan;
+    if (brandingConfig !== undefined) {
+      data.brandingConfig = {
+        primaryColor: brandingConfig.primary || brandingConfig.primaryColor || '#6366f1',
+        secondaryColor: brandingConfig.secondary || brandingConfig.secondaryColor || '#0f172a',
+        fontFamily: brandingConfig.fontFamily || 'Outfit',
+        watermarkText: brandingConfig.watermarkText || 'ORIGINAL',
+        customCss: brandingConfig.customCss || '',
+      };
+    }
+    if (features !== undefined) data.features = features;
+
+    return this.prisma.tenant.update({
+      where: { id: tenantId },
+      data,
+    });
+  }
 }

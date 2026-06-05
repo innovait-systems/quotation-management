@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Headers, UnauthorizedException, BadRequestException, HttpStatus, HttpCode } from '@nestjs/common';
+import { Controller, Post, Body, Headers, UnauthorizedException, BadRequestException, HttpStatus, HttpCode, Param } from '@nestjs/common';
 import { GovernanceService } from './governance.service';
 import { AppConfigService } from '../../common/config/app-config.service';
 
@@ -67,5 +67,16 @@ export class GovernanceController {
     }
 
     return this.governanceService.createUser(body);
+  }
+
+  @Post('tenants/:id')
+  @HttpCode(HttpStatus.OK)
+  async updateTenant(
+    @Headers('x-system-admin-key') adminKey: string,
+    @Param('id') tenantId: string,
+    @Body() body: any,
+  ) {
+    this.validateAdminKey(adminKey);
+    return this.governanceService.updateTenant(tenantId, body);
   }
 }
