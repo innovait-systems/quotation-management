@@ -961,30 +961,7 @@ export function exportDocumentToPDF(doc: any, type: 'QUOTATION' | 'PURCHASE_ORDE
     : (doc.id || 'SVC-DRAFT');
   const filename = `${docRef.replace(/[^a-zA-Z0-9-_]/g, '_')}.pdf`;
 
-  if (mode === 'download' && doc.pdfBase64) {
-    try {
-      const byteCharacters = atob(doc.pdfBase64);
-      const byteNumbers = new Array(byteCharacters.length);
-      for (let i = 0; i < byteCharacters.length; i++) {
-        byteNumbers[i] = byteCharacters.charCodeAt(i);
-      }
-      const byteArray = new Uint8Array(byteNumbers);
-      const blob = new Blob([byteArray], { type: 'application/pdf' });
-      const blobUrl = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = blobUrl;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      setTimeout(() => {
-        document.body.removeChild(a);
-        window.URL.revokeObjectURL(blobUrl);
-      }, 100);
-      return;
-    } catch (e) {
-      console.error('Failed to download cached PDF, regenerating...', e);
-    }
-  }
+
 
   const html = generateDocumentHTML(doc, type, activeTenant);
 
