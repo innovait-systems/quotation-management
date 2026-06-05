@@ -775,7 +775,7 @@ export default function UsersView() {
                       setIsEmailPreviewOpen(false);
                       showFeedback('success', `Invitation accepted! Successfully logged in as ${invitedUser.firstName} (${ROLE_CONFIG[invitedUser.role].label}).`);
                     }}>
-                      http://localhost:3000/auth/invite-accept?token=invite_{invitedUser.id}
+                      {typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000'}/auth/invite-accept?token=invite_{invitedUser.id}
                     </span>
                   </p>
                   <p>To sign in manually, navigate to the main login portal, select the organization slug <strong>{activeTenant.slug}</strong>, and enter your email address <strong>{invitedUser.email}</strong>.</p>
