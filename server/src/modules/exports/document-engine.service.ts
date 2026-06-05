@@ -152,7 +152,12 @@ export class DocumentEngineService {
       const page = await browser.newPage();
       
       // Inject Outfit and Inter fonts using web fonts support
-      await page.setContent(html, { waitUntil: 'networkidle0' as any });
+      try {
+        await page.setContent(html, { waitUntil: 'networkidle2' as any, timeout: 5000 });
+      } catch (timeoutErr) {
+        this.logger.warn(`Puppeteer network idle timeout exceeded while loading remote assets: ${timeoutErr.message}. Rendering PDF with current DOM state.`);
+        await page.setContent(html, { waitUntil: 'domcontentloaded' });
+      }
 
       // Load template configuration details to read orientation and print dimensions
       let template = null;
@@ -215,7 +220,12 @@ export class DocumentEngineService {
       const page = await browser.newPage();
       
       // Inject the completed HTML and wait for remote assets to resolve
-      await page.setContent(html, { waitUntil: 'networkidle0' as any });
+      try {
+        await page.setContent(html, { waitUntil: 'networkidle2' as any, timeout: 5000 });
+      } catch (timeoutErr) {
+        this.logger.warn(`Puppeteer network idle timeout exceeded while loading remote assets: ${timeoutErr.message}. Rendering PDF from HTML with current DOM state.`);
+        await page.setContent(html, { waitUntil: 'domcontentloaded' });
+      }
 
       // Generate the PDF buffer with A4 layout and exact print background colors
       const pdfBuffer = await page.pdf({
