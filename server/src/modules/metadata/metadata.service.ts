@@ -367,21 +367,56 @@ export class MetadataService {
   }
 
   async updateTenantProfile(tenantId: string, body: any): Promise<any> {
-    const { name, slug, currency, brandingConfig } = body;
+    const { name, slug, currency, brandingConfig, logoUrl, email, address, gstNumber, authorizedPersons, bankDetails, numberingFormats } = body;
 
     const data: any = {};
     if (name !== undefined) data.name = name;
     if (slug !== undefined) data.slug = slug;
     if (currency !== undefined) data.currency = currency;
-    if (brandingConfig !== undefined) {
-      data.brandingConfig = {
-        primaryColor: brandingConfig.primary || brandingConfig.primaryColor,
-        secondaryColor: brandingConfig.secondary || brandingConfig.secondaryColor,
-        fontFamily: brandingConfig.fontFamily || 'Outfit',
-        watermarkText: brandingConfig.watermarkText || 'ORIGINAL',
-        customCss: brandingConfig.customCss || '',
-      };
+    if (logoUrl !== undefined) data.logoUrl = logoUrl;
+    if (numberingFormats !== undefined) data.numberingFormats = numberingFormats;
+
+    // Fetch existing tenant to preserve extended metadata in brandingConfig JSON
+    const existingTenant = await this.prisma.tenant.findUnique({
+      where: { id: tenantId },
+    });
+
+    if (!existingTenant) {
+      throw new BadRequestException(`Tenant with ID "${tenantId}" not found.`);
     }
+
+    const existingBranding = (existingTenant.brandingConfig as any) || {};
+
+    const mergedBranding: any = {
+      primaryColor: brandingConfig?.primary || brandingConfig?.primaryColor || existingBranding.primaryColor || '#6366f1',
+      secondaryColor: brandingConfig?.secondary || brandingConfig?.secondaryColor || existingBranding.secondaryColor || '#0f172a',
+      fontFamily: brandingConfig?.fontFamily || existingBranding.fontFamily || 'Outfit',
+      watermarkText: brandingConfig?.watermarkText || existingBranding.watermarkText || 'ORIGINAL',
+      customCss: brandingConfig?.customCss || existingBranding.customCss || '',
+    };
+
+    // Preserve extended metadata
+    if (email !== undefined) mergedBranding.email = email;
+    else if (existingBranding.email) mergedBranding.email = existingBranding.email;
+
+    if (address !== undefined) mergedBranding.address = address;
+    else if (existingBranding.address) mergedBranding.address = existingBranding.address;
+
+    if (gstNumber !== undefined) mergedBranding.gstNumber = gstNumber;
+    else if (existingBranding.gstNumber) mergedBranding.gstNumber = existingBranding.gstNumber;
+
+    if (authorizedPersons !== undefined) mergedBranding.authorizedPersons = authorizedPersons;
+    else if (existingBranding.authorizedPersons) mergedBranding.authorizedPersons = existingBranding.authorizedPersons;
+
+    if (bankDetails !== undefined) mergedBranding.bankDetails = bankDetails;
+    else if (existingBranding.bankDetails) mergedBranding.bankDetails = existingBranding.bankDetails;
+
+    // Preserve features if already stored
+    if (existingBranding.features) mergedBranding.features = existingBranding.features;
+    if (existingBranding.rolePermissions) mergedBranding.rolePermissions = existingBranding.rolePermissions;
+    if (existingBranding.numberingSequences) mergedBranding.numberingSequences = existingBranding.numberingSequences;
+
+    data.brandingConfig = mergedBranding;
 
     return this.prisma.tenant.update({
       where: { id: tenantId },
