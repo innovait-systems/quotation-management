@@ -186,4 +186,29 @@ export class QuotationsService {
       include: { lines: true },
     });
   }
+
+  async deleteQuotation(tenantId: string, id: string) {
+    return this.prisma.$transaction(async (tx) => {
+      const quotation = await tx.quotation.findFirst({
+        where: { id, tenantId },
+      });
+      if (!quotation) {
+        throw new NotFoundException('Quotation not found.');
+      }
+
+      await tx.invoice.updateMany({
+        where: { quotationId: id },
+        data: { quotationId: null },
+      });
+
+      await tx.purchaseOrder.updateMany({
+        where: { quotationId: id },
+        data: { quotationId: null },
+      });
+
+      return tx.quotation.delete({
+        where: { id },
+      });
+    });
+  }
 }

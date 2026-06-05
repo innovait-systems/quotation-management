@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Body, Param, UseGuards, Req } from '@nestjs/common';
+import { Controller, Post, Get, Delete, Body, Param, UseGuards, Req } from '@nestjs/common';
 import { QuotationsService } from './quotations.service';
 import { TenantGuard } from '../../common/guards/tenant.guard';
 import { RbacGuard } from '../../common/guards/rbac.guard';
@@ -45,5 +45,15 @@ export class QuotationsController {
   ) {
     const tenantId = req.tenant.id;
     return this.quotationsService.getQuotationById(tenantId, quoteId);
+  }
+
+  @Delete(':id')
+  @Roles(UserRole.SUPER_ADMIN)
+  async remove(
+    @Req() req: any,
+    @Param('id') quoteId: string,
+  ) {
+    const tenantId = req.tenant.id;
+    return this.quotationsService.deleteQuotation(tenantId, quoteId);
   }
 }

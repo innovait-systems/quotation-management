@@ -19,7 +19,7 @@ import { exportDocumentToPDF } from '../../../utils/pdfExporter';
 import { getCurrencySymbol } from '../../../utils/currency';
 import {
   CreditCard, Plus, DollarSign, Clock, AlertTriangle, CheckCircle2,
-  Download, X, Banknote, Mail, Phone
+  Download, X, Banknote, Mail, Phone, Trash2
 } from 'lucide-react';
 
 const renderFieldInput = (
@@ -123,7 +123,7 @@ export default function InvoicesView() {
   const { templates, activeTemplateIds } = useTemplatesStore();
   const { customers } = useCustomersStore();
 
-  const { invoices: allInvoices, addInvoice, updateInvoice } = useDocumentStore();
+  const { invoices: allInvoices, addInvoice, updateInvoice, deleteInvoice } = useDocumentStore();
   const [invoices, setInvoices] = useState<InvoiceRecord[]>([]);
 
   React.useEffect(() => {
@@ -469,6 +469,20 @@ export default function InvoicesView() {
           selectedInv && (
             <div className="flex items-center justify-between flex-wrap gap-3">
               <div className="flex gap-2">
+                {can('invoices', 'delete') && (
+                  <button 
+                    onClick={() => {
+                      if (confirm('Are you sure you want to delete this invoice? This action is irreversible.')) {
+                        deleteInvoice(selectedInv.id);
+                        setIsDetailOpen(false);
+                        setSelectedInv(null);
+                      }
+                    }} 
+                    className="px-3 py-2 rounded-xl text-xs font-bold bg-rose-500/10 text-rose-500 border border-rose-500/20 hover:bg-rose-500/20 transition-all flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Trash2 size={12} /> Delete Invoice
+                  </button>
+                )}
                 {selectedInv.status === 'DRAFT' && (
                   <>
                     {can('invoices', 'edit') && (

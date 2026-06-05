@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Body, Param, UseGuards, Req, BadRequestException } from '@nestjs/common';
+import { Controller, Post, Get, Delete, Body, Param, UseGuards, Req, BadRequestException } from '@nestjs/common';
 import { PurchaseOrdersService } from './purchase-orders.service';
 import { TenantGuard } from '../../common/guards/tenant.guard';
 import { RbacGuard } from '../../common/guards/rbac.guard';
@@ -58,5 +58,15 @@ export class PurchaseOrdersController {
   ) {
     const tenantId = req.tenant.id;
     return this.purchaseOrdersService.getPOById(tenantId, poId);
+  }
+
+  @Delete(':id')
+  @Roles(UserRole.SUPER_ADMIN)
+  async remove(
+    @Req() req: any,
+    @Param('id') poId: string,
+  ) {
+    const tenantId = req.tenant.id;
+    return this.purchaseOrdersService.deletePurchaseOrder(tenantId, poId);
   }
 }

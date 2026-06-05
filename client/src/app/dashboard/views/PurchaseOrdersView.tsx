@@ -19,7 +19,7 @@ import { exportDocumentToPDF } from '../../../utils/pdfExporter';
 import { getCurrencySymbol } from '../../../utils/currency';
 import {
   ShoppingBag, Plus, Package, CheckCircle2, Clock, Ban,
-  ArrowRight, Download, Truck, X, Mail
+  ArrowRight, Download, Truck, X, Mail, Trash2
 } from 'lucide-react';
 
 const renderFieldInput = (
@@ -122,7 +122,7 @@ export default function PurchaseOrdersView() {
   const { templates, activeTemplateIds } = useTemplatesStore();
   const { customers } = useCustomersStore();
 
-  const { orders: allOrders, addPurchaseOrder, updatePurchaseOrder } = useDocumentStore();
+  const { orders: allOrders, addPurchaseOrder, updatePurchaseOrder, deletePurchaseOrder } = useDocumentStore();
   const [orders, setOrders] = useState<PurchaseOrderRecord[]>([]);
 
   React.useEffect(() => {
@@ -495,6 +495,20 @@ export default function PurchaseOrdersView() {
           selectedPO && (
             <div className="flex items-center justify-between flex-wrap gap-3">
               <div className="flex gap-2 flex-wrap">
+                {can('purchase_orders', 'delete') && (
+                  <button 
+                    onClick={() => {
+                      if (confirm('Are you sure you want to delete this purchase order? This action is irreversible.')) {
+                        deletePurchaseOrder(selectedPO.id);
+                        setIsDetailOpen(false);
+                        setSelectedPO(null);
+                      }
+                    }} 
+                    className="px-3 py-2 rounded-xl text-xs font-bold bg-rose-500/10 text-rose-600 border border-rose-500/20 hover:bg-rose-500/20 transition-all flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Trash2 size={12} /> Delete PO
+                  </button>
+                )}
                 {selectedPO.status === 'OPEN' && can('purchase_orders', 'edit') && (
                   <button 
                     onClick={() => {

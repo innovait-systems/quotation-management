@@ -324,4 +324,16 @@ export class InvoicesService {
 
     return updatedInvoice;
   }
+
+  async deleteInvoice(tenantId: string, id: string) {
+    const invoice = await this.prisma.invoice.findFirst({
+      where: { id, tenantId },
+    });
+    if (!invoice) {
+      throw new NotFoundException('Invoice not found.');
+    }
+    return this.prisma.invoice.delete({
+      where: { id },
+    });
+  }
 }

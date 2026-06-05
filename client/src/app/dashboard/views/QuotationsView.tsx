@@ -23,7 +23,7 @@ import { getCurrencySymbol } from '../../../utils/currency';
 import {
   FileText, Plus, ArrowRight, Eye, Edit3, Copy, Download,
   ChevronRight, Clock, GitBranch, Sparkles, X, ArrowLeftRight,
-  Mail, Phone
+  Mail, Phone, Trash2
 } from 'lucide-react';
 
 const renderFieldInput = (
@@ -128,7 +128,7 @@ export default function QuotationsView() {
   const { templates, activeTemplateIds } = useTemplatesStore();
   const { customers } = useCustomersStore();
 
-  const { quotes: allQuotes, addQuotation, updateQuotation, addInvoice, addPurchaseOrder } = useDocumentStore();
+  const { quotes: allQuotes, addQuotation, updateQuotation, deleteQuotation, addInvoice, addPurchaseOrder } = useDocumentStore();
   const [quotes, setQuotes] = useState<QuotationRecord[]>([]);
 
   React.useEffect(() => {
@@ -664,6 +664,20 @@ export default function QuotationsView() {
           selectedQuote && (
             <div className="flex items-center justify-between flex-wrap gap-3">
               <div className="flex gap-2">
+                {can('quotations', 'delete') && (
+                  <button 
+                    onClick={() => {
+                      if (confirm('Are you sure you want to delete this quotation? This action is irreversible.')) {
+                        deleteQuotation(selectedQuote.id);
+                        setIsDetailOpen(false);
+                        setSelectedQuote(null);
+                      }
+                    }} 
+                    className="px-3 py-2 rounded-xl text-xs font-bold bg-rose-500/10 text-rose-600 border border-rose-500/20 hover:bg-rose-500/20 transition-all flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Trash2 size={12} /> Delete Quotation
+                  </button>
+                )}
                 {selectedQuote.status === 'DRAFT' && (
                   <>
                     {can('quotations', 'edit') && (

@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Body, Param, UseGuards, Req } from '@nestjs/common';
+import { Controller, Post, Get, Delete, Body, Param, UseGuards, Req } from '@nestjs/common';
 import { InvoicesService } from './invoices.service';
 import { TenantGuard } from '../../common/guards/tenant.guard';
 import { RbacGuard } from '../../common/guards/rbac.guard';
@@ -56,5 +56,15 @@ export class InvoicesController {
   ) {
     const tenantId = req.tenant.id;
     return this.invoicesService.getInvoiceById(tenantId, invoiceId);
+  }
+
+  @Delete(':id')
+  @Roles(UserRole.SUPER_ADMIN)
+  async remove(
+    @Req() req: any,
+    @Param('id') invoiceId: string,
+  ) {
+    const tenantId = req.tenant.id;
+    return this.invoicesService.deleteInvoice(tenantId, invoiceId);
   }
 }

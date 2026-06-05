@@ -14,18 +14,21 @@ interface DocumentState {
   // Quotation Actions
   addQuotation: (quote: QuotationRecord) => void;
   updateQuotation: (quote: QuotationRecord) => void;
+  deleteQuotation: (id: string) => void;
   
   // Invoice Actions
   addInvoice: (invoice: InvoiceRecord) => void;
   updateInvoice: (invoice: InvoiceRecord) => void;
+  deleteInvoice: (id: string) => void;
   
   // PO Actions
   addPurchaseOrder: (po: PurchaseOrderRecord) => void;
   updatePurchaseOrder: (po: PurchaseOrderRecord) => void;
+  deletePurchaseOrder: (id: string) => void;
   
   // Service Actions
-  addService: (service: ServiceRecord) => void;
-  updateService: (service: ServiceRecord) => void;
+  addService: (newSvc: ServiceRecord) => void;
+  updateService: (updatedSvc: ServiceRecord) => void;
 }
 
 export const useDocumentStore = create<DocumentState>()(
@@ -40,15 +43,24 @@ export const useDocumentStore = create<DocumentState>()(
       updateQuotation: (updatedQuote) => set((state) => ({
         quotes: state.quotes.map((q) => q.id === updatedQuote.id ? updatedQuote : q)
       })),
+      deleteQuotation: (id) => set((state) => ({
+        quotes: state.quotes.filter((q) => q.id !== id)
+      })),
       
       addInvoice: (newInvoice) => set((state) => ({ invoices: [newInvoice, ...state.invoices] })),
       updateInvoice: (updatedInvoice) => set((state) => ({
         invoices: state.invoices.map((i) => i.id === updatedInvoice.id ? updatedInvoice : i)
       })),
+      deleteInvoice: (id) => set((state) => ({
+        invoices: state.invoices.filter((i) => i.id !== id)
+      })),
       
       addPurchaseOrder: (newPO) => set((state) => ({ orders: [newPO, ...state.orders] })),
       updatePurchaseOrder: (updatedPO) => set((state) => ({
         orders: state.orders.map((o) => o.id === updatedPO.id ? updatedPO : o)
+      })),
+      deletePurchaseOrder: (id) => set((state) => ({
+        orders: state.orders.filter((o) => o.id !== id)
       })),
       
       addService: (newSvc) => set((state) => ({ services: [newSvc, ...state.services] })),

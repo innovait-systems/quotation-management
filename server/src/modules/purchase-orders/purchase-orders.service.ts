@@ -377,4 +377,16 @@ export class PurchaseOrdersService {
 
     return po;
   }
+
+  async deletePurchaseOrder(tenantId: string, id: string) {
+    const po = await this.prisma.purchaseOrder.findFirst({
+      where: { id, tenantId },
+    });
+    if (!po) {
+      throw new NotFoundException('Purchase Order not found.');
+    }
+    return this.prisma.purchaseOrder.delete({
+      where: { id },
+    });
+  }
 }
