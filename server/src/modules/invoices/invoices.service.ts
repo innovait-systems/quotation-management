@@ -30,15 +30,8 @@ export class InvoicesService {
   /**
    * Helper to generate document number using numberingFormats pattern
    */
-  private generateInvoiceNumber(tenant: any): string {
-    const format = tenant.numberingFormats?.INVOICE || 'INV-{YYYY}-{NNNN}';
-    const now = new Date();
-    const year = now.getFullYear().toString();
-    const randomSeq = Math.floor(1000 + Math.random() * 9000).toString(); // Fallback sequence
-    
-    return format
-      .replace('{YYYY}', year)
-      .replace('{NNNN}', randomSeq);
+  private async generateInvoiceNumber(tenantId: string): Promise<string> {
+    return this.metadataService.generateNextNumber(tenantId, EntityType.INVOICE);
   }
 
   /**
@@ -121,7 +114,7 @@ export class InvoicesService {
       throw new NotFoundException('Tenant not found.');
     }
 
-    const invoiceNumber = data.invoiceNumber || this.generateInvoiceNumber(tenant);
+    const invoiceNumber = data.invoiceNumber || await this.generateInvoiceNumber(tenantId);
     const paymentQrCode = this.generateUpiDeepLink(tenant.name, invoiceNumber, grandTotal.toNumber(), tenant.brandingConfig);
 
     const issueDate = data.issueDate ? new Date(data.issueDate) : new Date();
@@ -225,7 +218,7 @@ export class InvoicesService {
       throw new NotFoundException('Tenant context not found.');
     }
 
-    const invoiceNumber = this.generateInvoiceNumber(tenant);
+    const invoiceNumber = await this.generateInvoiceNumber(tenantId);
     const paymentQrCode = this.generateUpiDeepLink(tenant.name, invoiceNumber, quotation.grandTotal.toNumber(), tenant.brandingConfig);
 
     const issueDate = new Date();

@@ -125,6 +125,18 @@ export interface Tenant {
   authorizedPersons?: AuthorizedPerson[];
   bankDetails?: BankDetails;
   rolePermissions?: Record<UserRole, RolePermissionConfig>;
+  numberingFormats?: {
+    QUOTATION?: string;
+    PURCHASE_ORDER?: string;
+    INVOICE?: string;
+    SERVICE?: string;
+  };
+  numberingSequences?: {
+    QUOTATION?: number;
+    PURCHASE_ORDER?: number;
+    INVOICE?: number;
+    SERVICE?: number;
+  };
 }
 
 export type UserRole = 'SUPER_ADMIN' | 'TENANT_ADMIN' | 'FINANCE' | 'SALES' | 'OPERATIONS' | 'VIEWER';
@@ -182,7 +194,21 @@ interface TenantState {
     email?: string;
     authorizedPersons?: AuthorizedPerson[];
     bankDetails?: BankDetails;
+    numberingFormats?: {
+      QUOTATION?: string;
+      PURCHASE_ORDER?: string;
+      INVOICE?: string;
+      SERVICE?: string;
+    };
+    numberingSequences?: {
+      QUOTATION?: number;
+      PURCHASE_ORDER?: number;
+      INVOICE?: number;
+      SERVICE?: number;
+    };
   }) => void;
+  incrementAndGetNextNumber: (entityType: 'QUOTATION' | 'INVOICE' | 'PURCHASE_ORDER' | 'SERVICE') => string;
+  resetNumberingSequence: (entityType: 'QUOTATION' | 'INVOICE' | 'PURCHASE_ORDER' | 'SERVICE') => void;
   addTenant: (tenant: Omit<Tenant, 'features'>, adminPassword?: string) => Promise<void>;
   updateTenant: (tenantId: string, updates: Partial<Tenant>) => void;
   deleteTenant: (tenantId: string) => void;
@@ -335,7 +361,19 @@ const mockTenants: Tenant[] = [
       swiftCode: '',
       branch: ''
     },
-    rolePermissions: { ...defaultRolePermissions }
+    rolePermissions: { ...defaultRolePermissions },
+    numberingFormats: {
+      QUOTATION: 'QT-{YYYY}-{NNN}',
+      PURCHASE_ORDER: 'PO-{YYYY}-{NNN}',
+      INVOICE: 'INV-{YYYY}-{NNN}',
+      SERVICE: 'SVC-{YYYY}-{NNN}'
+    },
+    numberingSequences: {
+      QUOTATION: 1,
+      PURCHASE_ORDER: 1,
+      INVOICE: 1,
+      SERVICE: 1
+    }
   },
   {
     id: 'tenant-spacex',
@@ -356,7 +394,19 @@ const mockTenants: Tenant[] = [
       swiftCode: '',
       branch: ''
     },
-    rolePermissions: { ...defaultRolePermissions }
+    rolePermissions: { ...defaultRolePermissions },
+    numberingFormats: {
+      QUOTATION: 'QT-{YYYY}-{NNN}',
+      PURCHASE_ORDER: 'PO-{YYYY}-{NNN}',
+      INVOICE: 'INV-{YYYY}-{NNN}',
+      SERVICE: 'SVC-{YYYY}-{NNN}'
+    },
+    numberingSequences: {
+      QUOTATION: 1,
+      PURCHASE_ORDER: 1,
+      INVOICE: 1,
+      SERVICE: 1
+    }
   },
   {
     id: 'tenant-wayne',
@@ -377,7 +427,19 @@ const mockTenants: Tenant[] = [
       swiftCode: '',
       branch: ''
     },
-    rolePermissions: { ...defaultRolePermissions }
+    rolePermissions: { ...defaultRolePermissions },
+    numberingFormats: {
+      QUOTATION: 'QT-{YYYY}-{NNN}',
+      PURCHASE_ORDER: 'PO-{YYYY}-{NNN}',
+      INVOICE: 'INV-{YYYY}-{NNN}',
+      SERVICE: 'SVC-{YYYY}-{NNN}'
+    },
+    numberingSequences: {
+      QUOTATION: 1,
+      PURCHASE_ORDER: 1,
+      INVOICE: 1,
+      SERVICE: 1
+    }
   }
 ];
 
@@ -554,7 +616,83 @@ export const useTenantStore = create<TenantState>()(
           brandingConfig: {
             primary: updates.primaryColor ?? state.activeTenant.brandingConfig.primary,
             secondary: updates.secondaryColor ?? state.activeTenant.brandingConfig.secondary,
+          },
+          numberingFormats: updates.numberingFormats !== undefined
+            ? { ...state.activeTenant.numberingFormats, ...updates.numberingFormats }
+            : state.activeTenant.numberingFormats,
+          numberingSequences: updates.numberingSequences !== undefined
+            ? { ...state.activeTenant.numberingSequences, ...updates.numberingSequences }
+            : state.activeTenant.numberingSequences,
+        };
+        return {
+          activeTenant: updatedTenant,
+          tenantsList: state.tenantsList.map(t => t.id === state.activeTenant.id ? updatedTenant : t)
+        };
+      }),
+
+      incrementAndGetNextNumber: (entityType) => {
+        let result = '';
+        set((state) => {
+          const formats = state.activeTenant.numberingFormats || {
+            QUOTATION: 'QT-{YYYY}-{NNN}',
+            PURCHASE_ORDER: 'PO-{YYYY}-{NNN}',
+            INVOICE: 'INV-{YYYY}-{NNN}',
+            SERVICE: 'SVC-{YYYY}-{NNN}'
+          };
+          const sequences = state.activeTenant.numberingSequences || {
+            QUOTATION: 1,
+            PURCHASE_ORDER: 1,
+            INVOICE: 1,
+            SERVICE: 1
+          };
+          const currentSeq = sequences[entityType] || 1;
+          const pattern = formats[entityType] || `${entityType.substring(0, 3)}-{YYYY}-{NNN}`;
+
+          const now = new Date();
+          const year = now.getFullYear().toString();
+          let formatted = pattern.replace(/{YYYY}/g, year);
+          const nMatch = pattern.match(/{N+}/);
+          if (nMatch) {
+            const fullMatch = nMatch[0];
+            const nLength = fullMatch.length - 2;
+            const padded = currentSeq.toString().padStart(nLength, '0');
+            formatted = formatted.replace(fullMatch, padded);
           }
+
+          result = formatted;
+
+          const updatedSequences = {
+            ...sequences,
+            [entityType]: currentSeq + 1
+          };
+          const updatedTenant = {
+            ...state.activeTenant,
+            numberingSequences: updatedSequences,
+            numberingFormats: formats
+          };
+
+          return {
+            activeTenant: updatedTenant,
+            tenantsList: state.tenantsList.map(t => t.id === state.activeTenant.id ? updatedTenant : t)
+          };
+        });
+        return result;
+      },
+
+      resetNumberingSequence: (entityType) => set((state) => {
+        const sequences = state.activeTenant.numberingSequences || {
+          QUOTATION: 1,
+          PURCHASE_ORDER: 1,
+          INVOICE: 1,
+          SERVICE: 1
+        };
+        const updatedSequences = {
+          ...sequences,
+          [entityType]: 1
+        };
+        const updatedTenant = {
+          ...state.activeTenant,
+          numberingSequences: updatedSequences
         };
         return {
           activeTenant: updatedTenant,

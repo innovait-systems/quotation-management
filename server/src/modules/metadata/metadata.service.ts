@@ -226,4 +226,143 @@ export class MetadataService {
 
     return calculatedPayload;
   }
+
+  async generateNextNumber(tenantId: string, entityType: EntityType): Promise<string> {
+    return this.prisma.$transaction(async (tx) => {
+      const tenant = await tx.tenant.findUnique({
+        where: { id: tenantId },
+        select: { id: true, numberingFormats: true }
+      });
+      if (!tenant) {
+        throw new BadRequestException('Tenant not found.');
+      }
+
+      const numberingConfig = (tenant.numberingFormats || {}) as any;
+
+      const formats = {
+        QUOTATION: numberingConfig.QUOTATION || 'QT-{YYYY}-{NNN}',
+        PURCHASE_ORDER: numberingConfig.PURCHASE_ORDER || 'PO-{YYYY}-{NNN}',
+        INVOICE: numberingConfig.INVOICE || 'INV-{YYYY}-{NNN}',
+        SERVICE: numberingConfig.SERVICE || 'SVC-{YYYY}-{NNN}'
+      };
+      
+      const sequences = numberingConfig.sequences || {
+        QUOTATION: 1,
+        PURCHASE_ORDER: 1,
+        INVOICE: 1,
+        SERVICE: 1
+      };
+
+      const pattern = formats[entityType] || `${entityType.substring(0, 3)}-{YYYY}-{NNN}`;
+      const currentSeq = sequences[entityType] || 1;
+
+      const now = new Date();
+      const year = now.getFullYear().toString();
+      let formatted = pattern.replace(/{YYYY}/g, year);
+
+      const nMatch = pattern.match(/{N+}/);
+      if (nMatch) {
+        const fullMatch = nMatch[0];
+        const nLength = fullMatch.length - 2;
+        const padded = currentSeq.toString().padStart(nLength, '0');
+        formatted = formatted.replace(fullMatch, padded);
+      } else {
+        // Fallback for standard {NNN} formatting patterns if no {N+} matches directly
+        const nnnMatch = pattern.match(/{NNN+}/);
+        if (nnnMatch) {
+          const fullMatch = nnnMatch[0];
+          const nLength = fullMatch.length - 2;
+          const padded = currentSeq.toString().padStart(nLength, '0');
+          formatted = formatted.replace(fullMatch, padded);
+        }
+      }
+
+      const updatedSequences = {
+        ...sequences,
+        [entityType]: currentSeq + 1
+      };
+
+      const updatedNumberingFormats = {
+        ...numberingConfig,
+        sequences: updatedSequences
+      };
+
+      await tx.tenant.update({
+        where: { id: tenantId },
+        data: { numberingFormats: updatedNumberingFormats }
+      });
+
+      return formatted;
+    });
+  }
+
+  async updateNumberingFormats(tenantId: string, formats: Record<string, string>): Promise<any> {
+    return this.prisma.$transaction(async (tx) => {
+      const tenant = await tx.tenant.findUnique({
+        where: { id: tenantId },
+        select: { id: true, numberingFormats: true }
+      });
+      if (!tenant) {
+        throw new BadRequestException('Tenant not found.');
+      }
+
+      const numberingConfig = (tenant.numberingFormats || {}) as any;
+      const currentSequences = numberingConfig.sequences || {
+        QUOTATION: 1,
+        PURCHASE_ORDER: 1,
+        INVOICE: 1,
+        SERVICE: 1
+      };
+
+      const updatedNumberingFormats = {
+        ...numberingConfig,
+        ...formats,
+        sequences: currentSequences
+      };
+
+      await tx.tenant.update({
+        where: { id: tenantId },
+        data: { numberingFormats: updatedNumberingFormats }
+      });
+
+      return updatedNumberingFormats;
+    });
+  }
+
+  async resetSequence(tenantId: string, entityType: EntityType): Promise<any> {
+    return this.prisma.$transaction(async (tx) => {
+      const tenant = await tx.tenant.findUnique({
+        where: { id: tenantId },
+        select: { id: true, numberingFormats: true }
+      });
+      if (!tenant) {
+        throw new BadRequestException('Tenant not found.');
+      }
+
+      const numberingConfig = (tenant.numberingFormats || {}) as any;
+      const currentSequences = numberingConfig.sequences || {
+        QUOTATION: 1,
+        PURCHASE_ORDER: 1,
+        INVOICE: 1,
+        SERVICE: 1
+      };
+
+      const updatedSequences = {
+        ...currentSequences,
+        [entityType]: 1
+      };
+
+      const updatedNumberingFormats = {
+        ...numberingConfig,
+        sequences: updatedSequences
+      };
+
+      await tx.tenant.update({
+        where: { id: tenantId },
+        data: { numberingFormats: updatedNumberingFormats }
+      });
+
+      return updatedNumberingFormats;
+    });
+  }
 }

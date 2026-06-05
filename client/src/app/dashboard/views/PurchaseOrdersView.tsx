@@ -224,7 +224,9 @@ export default function PurchaseOrdersView() {
     });
     const taxTotal = Math.round(subTotal * 0.18 * 100) / 100;
     const newPO: PurchaseOrderRecord = {
-      id: `po-${Date.now()}`, poNumber: `PO-2026-${String(Math.floor(Math.random() * 9000) + 1000)}`, tenantId: activeTenant.id,
+      id: `po-${Date.now()}`,
+      poNumber: useTenantStore.getState().incrementAndGetNextNumber('PURCHASE_ORDER'),
+      tenantId: activeTenant.id,
       supplierId: `sup-${Date.now()}`, supplierName: formSupplier, supplierCompany: formSupplierCompany,
       quotationId: null, quotationRef: null, status: 'OPEN',
       subTotal: Math.round(subTotal * 100) / 100, taxTotal, grandTotal: Math.round((subTotal + taxTotal) * 100) / 100,

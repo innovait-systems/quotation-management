@@ -2,9 +2,14 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { PrismaService } from '../../prisma/prisma.service';
 import { ServiceStatus, EntityType } from '@prisma/client';
 
+import { MetadataService } from '../metadata/metadata.service';
+
 @Injectable()
 export class ServicesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly metadataService: MetadataService,
+  ) {}
 
   async createService(
     tenantId: string,
@@ -40,12 +45,19 @@ export class ServicesService {
       isRequired: f.isRequired,
     }));
 
+    // Generate next sequential service ticket reference
+    const serviceNumber = await this.metadataService.generateNextNumber(tenantId, EntityType.SERVICE);
+    const updatedDynamicValues = {
+      ...data.dynamicValues,
+      serviceNumber,
+    };
+
     // 4. Initial Activity Log
     const initialActivity = [
       {
         timestamp: now.toISOString(),
         action: 'CREATED',
-        comment: `Ticket opened with a ${data.slaHours}h response SLA window.`,
+        comment: `Ticket opened with a ${data.slaHours}h response SLA window. Reference: ${serviceNumber}`,
         user: 'System Agent',
       },
     ];
@@ -59,7 +71,7 @@ export class ServicesService {
         status: ServiceStatus.OPEN,
         slaDeadline,
         activities: initialActivity,
-        dynamicValues: data.dynamicValues,
+        dynamicValues: updatedDynamicValues,
         metadataSchema,
       },
     });

@@ -85,4 +85,31 @@ export class MetadataController {
 
     return tenant.id;
   }
+
+  @Post('numbering-formats')
+  async updateNumberingFormats(
+    @Headers('x-tenant-id') tenantHeader: string,
+    @Body() body: Record<string, string>,
+  ) {
+    const tenantId = await this.resolveTenantId(tenantHeader);
+    return this.metadataService.updateNumberingFormats(tenantId, body);
+  }
+
+  @Post('numbering-formats/reset')
+  async resetSequence(
+    @Headers('x-tenant-id') tenantHeader: string,
+    @Body() body: { entityType: EntityType },
+  ) {
+    const tenantId = await this.resolveTenantId(tenantHeader);
+    if (!body.entityType) {
+      throw new BadRequestException('entityType is a required parameter.');
+    }
+    const uppercaseType = body.entityType.toUpperCase();
+    if (!Object.values(EntityType).includes(uppercaseType as EntityType)) {
+      throw new BadRequestException(
+        `Invalid entityType. Must be one of: ${Object.values(EntityType).join(', ')}`,
+      );
+    }
+    return this.metadataService.resetSequence(tenantId, uppercaseType as EntityType);
+  }
 }

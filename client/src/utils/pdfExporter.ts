@@ -112,7 +112,7 @@ export function generateDocumentHTML(doc: any, type: 'QUOTATION' | 'PURCHASE_ORD
     partnerCompany = doc.customerCompany || '';
   } else if (type === 'SERVICE') {
     docTitle = 'SERVICE SLA DELIVERABLES';
-    docRef = doc.id || 'SVC-DRAFT';
+    docRef = doc.serviceNumber || doc.id || 'SVC-DRAFT';
     dateLabel1 = 'Date Created';
     dateVal1 = doc.createdAt || new Date().toISOString().substring(0, 10);
     dateLabel2 = 'SLA Deadline';

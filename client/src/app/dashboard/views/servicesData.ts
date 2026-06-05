@@ -8,6 +8,7 @@ export interface ServiceActivity {
 
 export interface ServiceRecord {
   id: string;
+  serviceNumber?: string;
   title: string;
   tenantId: string;
   customerId: string;

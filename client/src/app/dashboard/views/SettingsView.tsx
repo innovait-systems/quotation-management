@@ -21,7 +21,7 @@ interface SettingToggle {
 }
 
 export default function SettingsView() {
-  const { activeTenant, toggleTenantFeature, updateTenantSettings, updateRolePermissions } = useTenantStore();
+  const { activeTenant, toggleTenantFeature, updateTenantSettings, updateRolePermissions, resetNumberingSequence } = useTenantStore();
   const { setCurrentTab, theme, setTheme } = useDashboardStore();
   const { fields, addField, deleteField, toggleField, updateField } = useCustomFieldsStore();
   // Custom Fields Designer Form State
@@ -150,10 +150,17 @@ export default function SettingsView() {
   const [secondaryColor, setSecondaryColor] = useState(activeTenant.brandingConfig.secondary);
 
   // Document Numbering
-  const [quoteFormat, setQuoteFormat] = useState('QT-{YYYY}-{NNN}');
-  const [poFormat, setPoFormat] = useState('PO-{YYYY}-{NNN}');
-  const [invoiceFormat, setInvoiceFormat] = useState('INV-{YYYY}-{NNN}');
-  const [serviceFormat, setServiceFormat] = useState('SVC-{YYYY}-{NNN}');
+  const [quoteFormat, setQuoteFormat] = useState(activeTenant.numberingFormats?.QUOTATION || 'QT-{YYYY}-{NNN}');
+  const [poFormat, setPoFormat] = useState(activeTenant.numberingFormats?.PURCHASE_ORDER || 'PO-{YYYY}-{NNN}');
+  const [invoiceFormat, setInvoiceFormat] = useState(activeTenant.numberingFormats?.INVOICE || 'INV-{YYYY}-{NNN}');
+  const [serviceFormat, setServiceFormat] = useState(activeTenant.numberingFormats?.SERVICE || 'SVC-{YYYY}-{NNN}');
+
+  React.useEffect(() => {
+    setQuoteFormat(activeTenant.numberingFormats?.QUOTATION || 'QT-{YYYY}-{NNN}');
+    setPoFormat(activeTenant.numberingFormats?.PURCHASE_ORDER || 'PO-{YYYY}-{NNN}');
+    setInvoiceFormat(activeTenant.numberingFormats?.INVOICE || 'INV-{YYYY}-{NNN}');
+    setServiceFormat(activeTenant.numberingFormats?.SERVICE || 'SVC-{YYYY}-{NNN}');
+  }, [activeTenant.id, activeTenant.numberingFormats]);
 
   // Tax Config
   const [defaultTaxRate, setDefaultTaxRate] = useState(18);
@@ -218,6 +225,12 @@ export default function SettingsView() {
           ifscCode: bankIfscCode,
           swiftCode: bankSwiftCode,
           branch: bankBranch
+        },
+        numberingFormats: {
+          QUOTATION: quoteFormat,
+          PURCHASE_ORDER: poFormat,
+          INVOICE: invoiceFormat,
+          SERVICE: serviceFormat
         }
       });
       setSaveStatus('saved');
@@ -871,17 +884,40 @@ export default function SettingsView() {
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 {[
-                  { label: 'Quotation Number Format', value: quoteFormat, setter: setQuoteFormat, preview: 'QT-2026-0045' },
-                  { label: 'Purchase Order Format', value: poFormat, setter: setPoFormat, preview: 'PO-2026-0012' },
-                  { label: 'Invoice Number Format', value: invoiceFormat, setter: setInvoiceFormat, preview: 'INV-2026-0089' },
-                  { label: 'Service Ticket Format', value: serviceFormat, setter: setServiceFormat, preview: 'SVC-2026-0003' },
-                ].map(field => (
-                  <div key={field.label} className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-500 dark:text-zinc-400">{field.label}</label>
-                    <input type="text" value={field.value} onChange={(e) => field.setter(e.target.value)} className="w-full rounded-xl px-3 py-2.5 text-sm bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 focus:outline-none font-mono" />
-                    <p className="text-[10px] text-slate-400">Preview: <span className="font-mono font-bold text-slate-600 dark:text-zinc-300">{field.preview}</span></p>
-                  </div>
-                ))}
+                  { key: 'QUOTATION', label: 'Quotation Number Format', value: quoteFormat, setter: setQuoteFormat, preview: 'QT-2026-0045' },
+                  { key: 'PURCHASE_ORDER', label: 'Purchase Order Format', value: poFormat, setter: setPoFormat, preview: 'PO-2026-0012' },
+                  { key: 'INVOICE', label: 'Invoice Number Format', value: invoiceFormat, setter: setInvoiceFormat, preview: 'INV-2026-0089' },
+                  { key: 'SERVICE', label: 'Service Ticket Format', value: serviceFormat, setter: setServiceFormat, preview: 'SVC-2026-0003' },
+                ].map(field => {
+                  const currentSeq = activeTenant.numberingSequences?.[field.key as 'QUOTATION' | 'PURCHASE_ORDER' | 'INVOICE' | 'SERVICE'] || 1;
+                  return (
+                    <div key={field.label} className="space-y-1.5 p-4 bg-zinc-50/50 dark:bg-zinc-900/10 border border-zinc-200/40 dark:border-zinc-800/30 rounded-2xl">
+                      <label className="text-xs font-bold text-slate-500 dark:text-zinc-400">{field.label}</label>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={field.value}
+                          onChange={(e) => field.setter(e.target.value)}
+                          className="flex-1 rounded-xl px-3 py-2.5 text-sm bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 focus:outline-none font-mono"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            resetNumberingSequence(field.key as any);
+                          }}
+                          className="px-3 py-2 rounded-xl text-xs font-bold bg-rose-500/10 text-rose-600 border border-rose-500/20 hover:bg-rose-500/20 transition-all flex items-center justify-center shrink-0 active:scale-95 cursor-pointer"
+                          title="Reset Sequence to 1"
+                        >
+                          Reset
+                        </button>
+                      </div>
+                      <div className="flex items-center justify-between text-[10px] text-slate-400">
+                        <span>Preview: <span className="font-mono font-bold text-slate-600 dark:text-zinc-300">{field.preview}</span></span>
+                        <span>Next Sequence: <span className="font-mono font-bold text-indigo-500">{currentSeq}</span></span>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}

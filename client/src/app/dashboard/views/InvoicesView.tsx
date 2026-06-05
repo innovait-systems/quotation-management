@@ -218,7 +218,8 @@ export default function InvoicesView() {
 
   const handleCreate = () => {
     const newInv: InvoiceRecord = {
-      id: `inv-${Date.now()}`, invoiceNumber: `INV-2026-${String(Math.floor(Math.random() * 9000) + 1000)}`,
+      id: `inv-${Date.now()}`,
+      invoiceNumber: useTenantStore.getState().incrementAndGetNextNumber('INVOICE'),
       tenantId: activeTenant.id, customerId: `cust-${Date.now()}`, customerName: formCustomer, customerCompany: formCompany,
       quotationRef: null, issueDate: new Date().toISOString().slice(0, 10), dueDate: formDueDate,
       status: 'DRAFT', subTotal: totals.subTotal, taxTotal: totals.taxTotal, discountTotal: totals.discountTotal,

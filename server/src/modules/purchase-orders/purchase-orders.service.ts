@@ -13,15 +13,8 @@ export class PurchaseOrdersService {
   /**
    * Helper to generate sequential PO numbers matching tenant formatting
    */
-  private generatePONumber(tenant: any): string {
-    const format = tenant.numberingFormats?.PURCHASE_ORDER || 'PO-{YYYY}-{NNNN}';
-    const now = new Date();
-    const year = now.getFullYear().toString();
-    const randomSeq = Math.floor(1000 + Math.random() * 9000).toString();
-    
-    return format
-      .replace('{YYYY}', year)
-      .replace('{NNNN}', randomSeq);
+  private async generatePONumber(tenantId: string): Promise<string> {
+    return this.metadataService.generateNextNumber(tenantId, EntityType.PURCHASE_ORDER);
   }
 
   /**
@@ -101,7 +94,7 @@ export class PurchaseOrdersService {
       throw new NotFoundException('Tenant not found.');
     }
 
-    const poNumber = data.poNumber || this.generatePONumber(tenant);
+    const poNumber = data.poNumber || await this.generatePONumber(tenantId);
     const deliveryTerms = data.deliveryTerms || null;
 
     // 5. Create PO and freeze schema snapshot inside the database record
@@ -219,7 +212,7 @@ export class PurchaseOrdersService {
       throw new NotFoundException('Tenant not found.');
     }
 
-    const poNumber = this.generatePONumber(tenant);
+    const poNumber = await this.generatePONumber(tenantId);
 
     // Execute atomic transacted creation & update Quotation status
     const po = await this.prisma.$transaction(async (tx) => {

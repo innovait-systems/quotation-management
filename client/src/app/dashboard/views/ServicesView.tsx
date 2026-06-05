@@ -178,6 +178,7 @@ export default function ServicesView() {
   };
 
   const columns: Column<ServiceRecord>[] = [
+    { key: 'serviceNumber', label: 'Service Ref', sortable: true, render: (row) => <span className="font-mono font-bold text-slate-700 dark:text-zinc-300">{row.serviceNumber || row.id}</span> },
     { key: 'title', label: 'Service Title', sortable: true, render: (row) => <span className="font-bold text-slate-800 dark:text-zinc-200">{row.title}</span> },
     { key: 'customerCompany', label: 'Client', sortable: true, render: (row) => (
       <div><p className="font-bold text-slate-700 dark:text-zinc-300">{row.customerCompany}</p><p className="text-[10px] text-slate-400 mt-0.5">{row.customerName}</p></div>
@@ -217,7 +218,10 @@ export default function ServicesView() {
 
   const handleCreate = () => {
     const newSvc: ServiceRecord = {
-      id: `svc-${Date.now()}`, title: formTitle, tenantId: activeTenant.id,
+      id: `svc-${Date.now()}`,
+      serviceNumber: useTenantStore.getState().incrementAndGetNextNumber('SERVICE'),
+      title: formTitle,
+      tenantId: activeTenant.id,
       customerId: `cust-${Date.now()}`, customerName: formCustomer, customerCompany: formCompany,
       description: formDescription, status: 'OPEN', slaDeadline: formDeadline,
       assignedTeam: formTeam,

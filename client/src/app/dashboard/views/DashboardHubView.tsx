@@ -302,7 +302,7 @@ export default function DashboardHubView() {
         // Antigravity Tenant: Simulate PO creation
         const simulatedPO = {
           id: `sim-po-${newId}`,
-          poNumber: `PO-2026-${String(Math.floor(Math.random() * 9000) + 1000)}`,
+          poNumber: useTenantStore.getState().incrementAndGetNextNumber('PURCHASE_ORDER'),
           tenantId: activeTenant.id,
           supplierId: `sim-sup-${newId}`,
           supplierName: 'Operations Admin',
@@ -326,7 +326,7 @@ export default function DashboardHubView() {
         // Stark Tenant: Simulate Quote approval
         const simulatedQuote = {
           id: `sim-q-${newId}`,
-          quoteNumber: `QT-2026-${String(Math.floor(Math.random() * 9000) + 1000)}`,
+          quoteNumber: useTenantStore.getState().incrementAndGetNextNumber('QUOTATION'),
           tenantId: activeTenant.id,
           customerId: `sim-cust-${newId}`,
           customerName: 'Pepper Potts',
@@ -352,7 +352,7 @@ export default function DashboardHubView() {
         // Other tenants: Simulate Invoice creation and payment
         const simulatedInvoice = {
           id: `sim-inv-${newId}`,
-          invoiceNumber: `INV-2026-${String(Math.floor(Math.random() * 9000) + 1000)}`,
+          invoiceNumber: useTenantStore.getState().incrementAndGetNextNumber('INVOICE'),
           tenantId: activeTenant.id,
           customerId: `sim-cust-${newId}`,
           customerName: 'Acme Admin',

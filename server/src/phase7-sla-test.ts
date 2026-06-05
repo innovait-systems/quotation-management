@@ -2,6 +2,8 @@ import { TenantConnectionPool } from './prisma/tenant-connection-pool';
 import { PrismaService } from './prisma/prisma.service';
 import { tenantContextStorage } from './prisma/tenant-context';
 import { ServicesService } from './modules/services/services.service';
+import { FormulaEngine } from './common/formula/formula.engine';
+import { MetadataService } from './modules/metadata/metadata.service';
 import { ServiceStatus, EntityType, FieldType } from '@prisma/client';
 import { NotFoundException } from '@nestjs/common';
 
@@ -25,7 +27,9 @@ async function runPhase7SlaTests() {
 
   const pool = new TenantConnectionPool();
   const prismaService = new PrismaService(pool);
-  const servicesService = new ServicesService(prismaService);
+  const formulaEngine = new FormulaEngine();
+  const metadataService = new MetadataService(prismaService, formulaEngine);
+  const servicesService = new ServicesService(prismaService, metadataService);
 
   try {
     console.log('⚡ Initializing Database connection context...');

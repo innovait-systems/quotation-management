@@ -239,7 +239,7 @@ export default function QuotationsView() {
   const handleCreate = () => {
     const newQuote: QuotationRecord = {
       id: `q-${Date.now()}`,
-      quoteNumber: `QT-2026-${String(Math.floor(Math.random() * 9000) + 1000)}`,
+      quoteNumber: useTenantStore.getState().incrementAndGetNextNumber('QUOTATION'),
       tenantId: activeTenant.id,
       customerId: `cust-${Date.now()}`,
       customerName: formCustomer,
@@ -305,7 +305,7 @@ export default function QuotationsView() {
     // 2. Create and unshift a new Purchase Order Record
     const newPO: PurchaseOrderRecord = {
       id: `po-${Date.now()}`,
-      poNumber: `PO-2026-${String(Math.floor(Math.random() * 9000) + 1000)}`,
+      poNumber: useTenantStore.getState().incrementAndGetNextNumber('PURCHASE_ORDER'),
       tenantId: quote.tenantId,
       supplierId: quote.customerId, // Map customer to supplier
       supplierName: quote.customerName,
@@ -350,7 +350,7 @@ export default function QuotationsView() {
     // 2. Create and unshift a new Invoice Record
     const newInvoice: InvoiceRecord = {
       id: `inv-${Date.now()}`,
-      invoiceNumber: `INV-2026-${String(Math.floor(Math.random() * 9000) + 1000)}`,
+      invoiceNumber: useTenantStore.getState().incrementAndGetNextNumber('INVOICE'),
       tenantId: quote.tenantId,
       customerId: quote.customerId,
       customerName: quote.customerName,

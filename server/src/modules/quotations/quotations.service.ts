@@ -88,7 +88,7 @@ export class QuotationsService {
         tenantId,
         customerId: data.customerId,
         creatorId,
-        quoteNumber: data.quoteNumber || `QT-${Date.now()}`,
+        quoteNumber: data.quoteNumber || await this.metadataService.generateNextNumber(tenantId, EntityType.QUOTATION),
         version: 1,
         status: QuoteStatus.DRAFT,
         subTotal,
