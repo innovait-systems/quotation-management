@@ -50,7 +50,7 @@ const initialSeedNotifications: Notification[] = [
   },
   {
     id: 'seed-sys-1',
-    tenantId: 'tenant-innovait',
+    tenantId: 'global-saas',
     title: 'Security Alert',
     message: 'System administration access key successfully verified.',
     type: 'info',

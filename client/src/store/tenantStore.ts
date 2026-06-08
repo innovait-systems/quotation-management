@@ -901,7 +901,7 @@ export const useTenantStore = create<TenantState>()(
             `Provisioned B2B workspace tenant sandbox: ${tenantRes.name}`,
             'success',
             'SYSTEM',
-            tenantRes.id
+            'global-saas'
           );
 
         } catch (err) {
@@ -963,7 +963,7 @@ export const useTenantStore = create<TenantState>()(
             `Workspace tenant sandbox removed: ${deletedTenant.name}`,
             'alert',
             'SYSTEM',
-            state.activeTenant.id
+            'global-saas'
           );
         }
 

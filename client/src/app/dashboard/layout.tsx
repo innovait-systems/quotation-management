@@ -122,6 +122,8 @@ export default function DashboardLayout({
     deleteNotification 
   } = useNotificationStore();
 
+  const currentNotifTenantId = isSaaSAdminSession ? 'global-saas' : activeTenant.id;
+
   const formatTimeAgo = (isoString: string) => {
     const now = new Date();
     const date = new Date(isoString);
@@ -703,9 +705,9 @@ export default function DashboardLayout({
                 title="Notifications"
               >
                 <BellRing size={16} />
-                {notifications.filter(n => n.tenantId === activeTenant.id && !n.isRead).length > 0 && (
+                {notifications.filter(n => n.tenantId === currentNotifTenantId && !n.isRead).length > 0 && (
                   <span className="absolute top-1.5 right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[8px] font-black text-white ring-2 ring-white dark:ring-zinc-900 animate-pulse">
-                    {notifications.filter(n => n.tenantId === activeTenant.id && !n.isRead).length}
+                    {notifications.filter(n => n.tenantId === currentNotifTenantId && !n.isRead).length}
                   </span>
                 )}
               </button>
@@ -717,12 +719,12 @@ export default function DashboardLayout({
                     <div>
                       <h3 className="text-sm font-extrabold text-slate-900 dark:text-zinc-50">Notifications</h3>
                       <p className="text-[10px] text-slate-400 dark:text-zinc-500 mt-0.5">
-                        {notifications.filter(n => n.tenantId === activeTenant.id && !n.isRead).length} unread alerts
+                        {notifications.filter(n => n.tenantId === currentNotifTenantId && !n.isRead).length} unread alerts
                       </p>
                     </div>
                     <div className="flex gap-2">
                       <button
-                        onClick={() => markAllAsRead(activeTenant.id)}
+                        onClick={() => markAllAsRead(currentNotifTenantId)}
                         className="p-1 rounded-md text-[10px] font-bold text-indigo-500 hover:bg-indigo-500/10 transition-colors flex items-center gap-1 cursor-pointer"
                         title="Mark all as read"
                       >
@@ -730,7 +732,7 @@ export default function DashboardLayout({
                         <span className="hidden sm:inline">Read all</span>
                       </button>
                       <button
-                        onClick={() => clearAll(activeTenant.id)}
+                        onClick={() => clearAll(currentNotifTenantId)}
                         className="p-1 rounded-md text-[10px] font-bold text-rose-500 hover:bg-rose-500/10 transition-colors flex items-center gap-1 cursor-pointer"
                         title="Clear all"
                       >
@@ -760,14 +762,14 @@ export default function DashboardLayout({
                           : 'text-slate-400 hover:text-slate-600 dark:hover:text-zinc-300'
                       }`}
                     >
-                      Unread ({notifications.filter(n => n.tenantId === activeTenant.id && !n.isRead).length})
+                      Unread ({notifications.filter(n => n.tenantId === currentNotifTenantId && !n.isRead).length})
                     </button>
                   </div>
 
                   {/* Notifications List */}
                   <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
                     {notifications
-                      .filter(n => n.tenantId === activeTenant.id && (notifFilter === 'ALL' || !n.isRead))
+                      .filter(n => n.tenantId === currentNotifTenantId && (notifFilter === 'ALL' || !n.isRead))
                       .map((n) => {
                         return (
                           <div
@@ -796,7 +798,7 @@ export default function DashboardLayout({
                               }`}>
                                 {n.title}
                               </p>
-                              <p className="text-[10px] text-slate-400 dark:text-zinc-500 mt-0.5 leading-normal">
+                              <p className="text-[10px] text-slate-400 dark:text-zinc-550 mt-0.5 leading-normal">
                                 {n.message}
                               </p>
                               <span className="text-[9px] font-mono text-slate-400 dark:text-zinc-550 mt-1 block">
@@ -820,28 +822,28 @@ export default function DashboardLayout({
                               )}
                               <button
                                 onClick={() => deleteNotification(n.id)}
-                                className="h-5 w-5 rounded-md flex items-center justify-center bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 transition-all cursor-pointer"
-                                title="Remove"
-                              >
-                                <X size={10} />
-                              </button>
+                                  className="h-5 w-5 rounded-md flex items-center justify-center bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 transition-all cursor-pointer"
+                                  title="Remove"
+                                >
+                                  <X size={10} />
+                                </button>
+                              </div>
                             </div>
-                          </div>
-                        );
-                      })}
+                          );
+                        })}
 
-                    {/* Empty State */}
-                    {notifications.filter(n => n.tenantId === activeTenant.id && (notifFilter === 'ALL' || !n.isRead)).length === 0 && (
-                      <div className="flex flex-col items-center justify-center py-10 text-center text-slate-400 dark:text-zinc-500">
-                        <Inbox size={24} className="mb-2 text-slate-350 dark:text-zinc-650 animate-bounce" />
-                        <p className="text-xs font-bold">Inbox is clear</p>
-                        <p className="text-[10px] mt-0.5">No new alerts to display.</p>
-                      </div>
-                    )}
+                      {/* Empty State */}
+                      {notifications.filter(n => n.tenantId === currentNotifTenantId && (notifFilter === 'ALL' || !n.isRead)).length === 0 && (
+                        <div className="flex flex-col items-center justify-center py-10 text-center text-slate-400 dark:text-zinc-500">
+                          <Inbox size={24} className="mb-2 text-slate-350 dark:text-zinc-650 animate-bounce" />
+                          <p className="text-xs font-bold">Inbox is clear</p>
+                          <p className="text-[10px] mt-0.5">No new alerts to display.</p>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              )}
-            </div>
+                )}
+              </div>
 
             {/* SEPARATOR */}
             <div className="h-6 w-px bg-zinc-200 dark:bg-zinc-800/60" />
