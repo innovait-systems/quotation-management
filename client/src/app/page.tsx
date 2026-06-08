@@ -156,7 +156,7 @@ export default function WelcomePortalGate() {
     setError(null);
     setIsLoading(true);
     setEmail(selectedUser.email);
-    setPassword('password');
+    setPassword(selectedUser.password || 'password');
 
     setTimeout(async () => {
       const success = await login(selectedUser.email, targetTenantId, selectedUser.password || 'password', loginMode === 'SAAS_OWNER');
@@ -244,6 +244,8 @@ export default function WelcomePortalGate() {
                 type="button"
                 onClick={() => {
                   setLoginMode('COMPANY');
+                  setEmail('');
+                  setPassword('password');
                   setError(null);
                 }}
                 className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
@@ -259,6 +261,8 @@ export default function WelcomePortalGate() {
                 type="button"
                 onClick={() => {
                   setLoginMode('SAAS_OWNER');
+                  setEmail('it@innovait-systems.com');
+                  setPassword('InnovaITSecure2026!');
                   setError(null);
                 }}
                 className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
@@ -336,7 +340,7 @@ export default function WelcomePortalGate() {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 h-8 w-8 rounded-lg flex items-center justify-center hover:bg-zinc-100 dark:hover:bg-zinc-800 text-slate-400 hover:text-slate-600 transition-colors"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 h-8 w-8 rounded-lg flex items-center justify-center hover:bg-zinc-100 dark:hover:bg-zinc-800 text-slate-400 hover:text-slate-650 transition-colors"
                   >
                     {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
@@ -373,9 +377,11 @@ export default function WelcomePortalGate() {
                   <ShieldAlert size={12} className="text-indigo-500" style={{ color: primaryBrandColor }} />
                   Demo Accounts Credentials
                 </span>
-                {matchedTenant && (
-                  <span className="text-[9px] font-mono bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded-md text-slate-400">Password: password</span>
-                )}
+                {loginMode === 'SAAS_OWNER' ? (
+                  <span className="text-[9px] font-mono bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded-md text-slate-450">Password: InnovaITSecure2026!</span>
+                ) : matchedTenant ? (
+                  <span className="text-[9px] font-mono bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded-md text-slate-450">Password: password</span>
+                ) : null}
               </div>
 
               {loginMode === 'SAAS_OWNER' ? (
