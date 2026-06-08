@@ -87,12 +87,31 @@ export default function AgreementsView() {
   };
 
   const handleDownloadFile = (fileName: string, title: string, versionLabel: string) => {
-    const content = `Agreement/Document Download File: ${fileName}\n` +
-      `Title: ${title}\n` +
-      `Version: ${versionLabel}\n` +
-      `Generated At: ${new Date().toLocaleString()}\n\n` +
-      `This is a downloaded document for the active workspace.`;
-    const blob = new Blob([content], { type: 'text/plain' });
+    const extension = fileName.split('.').pop()?.toLowerCase();
+    let blob: Blob;
+
+    if (extension === 'pdf') {
+      const pdfString = 
+        `%PDF-1.4\n` +
+        `1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n` +
+        `2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n` +
+        `3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents 4 0 R /Resources << /Font << /F1 << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> >> >> >>\nendobj\n` +
+        `4 0 obj\n<< /Length 250 >>\nstream\n` +
+        `BT\n/F1 14 Tf\n72 750 Td\n(Agreement / Document Download) Tj\n0 -24 Td\n/F1 12 Tf\n(Document Title: ${title}) Tj\n0 -18 Td\n(Version: ${versionLabel}) Tj\n0 -18 Td\n(Original File: ${fileName}) Tj\n0 -36 Td\n(This is a downloaded document for the active workspace.) Tj\nET\nendstream\nendobj\n` +
+        `xref\n0 5\n0000000000 65535 f\n0000000009 00000 n\n0000000058 00000 n\n0000000115 00000 n\n0000000212 00000 n\n` +
+        `trailer\n<< /Size 5 /Root 1 0 R >>\n` +
+        `startxref\n360\n` +
+        `%%EOF`;
+      blob = new Blob([pdfString], { type: 'application/pdf' });
+    } else {
+      const content = `Agreement/Document Download File: ${fileName}\n` +
+        `Title: ${title}\n` +
+        `Version: ${versionLabel}\n` +
+        `Generated At: ${new Date().toLocaleString()}\n\n` +
+        `This is a downloaded document for the active workspace.`;
+      blob = new Blob([content], { type: 'application/octet-stream' });
+    }
+
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
