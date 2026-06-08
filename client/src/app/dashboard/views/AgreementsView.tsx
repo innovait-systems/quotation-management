@@ -14,6 +14,8 @@ import {
   FileCheck, FileText, FileSpreadsheet, RefreshCw
 } from 'lucide-react';
 
+const uploadedBlobsCache: Record<string, Blob> = {};
+
 export default function AgreementsView() {
   const { activeTenant } = useTenantStore();
   const { getCustomersForTenant } = useCustomersStore();
@@ -44,6 +46,7 @@ export default function AgreementsView() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadedFileName, setUploadedFileName] = useState('');
   const [uploadedFileSize, setUploadedFileSize] = useState('');
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Forms state for Add Version
@@ -53,6 +56,7 @@ export default function AgreementsView() {
   const [uploadVerProgress, setUploadVerProgress] = useState(0);
   const [uploadedVerFileName, setUploadedVerFileName] = useState('');
   const [uploadedVerFileSize, setUploadedVerFileSize] = useState('');
+  const [uploadedVerFile, setUploadedVerFile] = useState<File | null>(null);
   const fileVerInputRef = useRef<HTMLInputElement>(null);
 
   const tenantCustomers = getCustomersForTenant(activeTenant.id);
@@ -87,29 +91,31 @@ export default function AgreementsView() {
   };
 
   const handleDownloadFile = (fileName: string, title: string, versionLabel: string) => {
-    const extension = fileName.split('.').pop()?.toLowerCase();
-    let blob: Blob;
+    let blob = uploadedBlobsCache[fileName];
 
-    if (extension === 'pdf') {
-      const pdfString = 
-        `%PDF-1.4\n` +
-        `1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n` +
-        `2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n` +
-        `3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents 4 0 R /Resources << /Font << /F1 << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> >> >> >>\nendobj\n` +
-        `4 0 obj\n<< /Length 250 >>\nstream\n` +
-        `BT\n/F1 14 Tf\n72 750 Td\n(Agreement / Document Download) Tj\n0 -24 Td\n/F1 12 Tf\n(Document Title: ${title}) Tj\n0 -18 Td\n(Version: ${versionLabel}) Tj\n0 -18 Td\n(Original File: ${fileName}) Tj\n0 -36 Td\n(This is a downloaded document for the active workspace.) Tj\nET\nendstream\nendobj\n` +
-        `xref\n0 5\n0000000000 65535 f\n0000000009 00000 n\n0000000058 00000 n\n0000000115 00000 n\n0000000212 00000 n\n` +
-        `trailer\n<< /Size 5 /Root 1 0 R >>\n` +
-        `startxref\n360\n` +
-        `%%EOF`;
-      blob = new Blob([pdfString], { type: 'application/pdf' });
-    } else {
-      const content = `Agreement/Document Download File: ${fileName}\n` +
-        `Title: ${title}\n` +
-        `Version: ${versionLabel}\n` +
-        `Generated At: ${new Date().toLocaleString()}\n\n` +
-        `This is a downloaded document for the active workspace.`;
-      blob = new Blob([content], { type: 'application/octet-stream' });
+    if (!blob) {
+      const extension = fileName.split('.').pop()?.toLowerCase();
+      if (extension === 'pdf') {
+        const pdfString = 
+          `%PDF-1.4\n` +
+          `1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n` +
+          `2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n` +
+          `3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents 4 0 R /Resources << /Font << /F1 << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> >> >> >>\nendobj\n` +
+          `4 0 obj\n<< /Length 250 >>\nstream\n` +
+          `BT\n/F1 14 Tf\n72 750 Td\n(Agreement / Document Download) Tj\n0 -24 Td\n/F1 12 Tf\n(Document Title: ${title}) Tj\n0 -18 Td\n(Version: ${versionLabel}) Tj\n0 -18 Td\n(Original File: ${fileName}) Tj\n0 -36 Td\n(This is a downloaded document for the active workspace.) Tj\nET\nendstream\nendobj\n` +
+          `xref\n0 5\n0000000000 65535 f\n0000000009 00000 n\n0000000058 00000 n\n0000000115 00000 n\n0000000212 00000 n\n` +
+          `trailer\n<< /Size 5 /Root 1 0 R >>\n` +
+          `startxref\n360\n` +
+          `%%EOF`;
+        blob = new Blob([pdfString], { type: 'application/pdf' });
+      } else {
+        const content = `Agreement/Document Download File: ${fileName}\n` +
+          `Title: ${title}\n` +
+          `Version: ${versionLabel}\n` +
+          `Generated At: ${new Date().toLocaleString()}\n\n` +
+          `This is a downloaded document for the active workspace.`;
+        blob = new Blob([content], { type: 'application/octet-stream' });
+      }
     }
 
     const url = URL.createObjectURL(blob);
@@ -198,19 +204,15 @@ export default function AgreementsView() {
     }
   ];
 
-  // Simulating File Upload Progress
-  const simulateFileUpload = (isNewDoc: boolean) => {
-    const fileNames = [
-      'master_sla_spec_final.pdf',
-      'services_pricing_retainer.docx',
-      'sow_outsource_sprints_v2.pdf',
-      'operational_ob_licensing_final.pdf',
-      'tax_assessment_signed.pdf'
-    ];
-    const chosenName = fileNames[Math.floor(Math.random() * fileNames.length)];
-    const chosenSize = `${(Math.random() * 2 + 0.5).toFixed(1)} MB`;
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, isNewDoc: boolean) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    const file = files[0];
+    const chosenName = file.name;
+    const chosenSize = `${(file.size / (1024 * 1024)).toFixed(2)} MB`;
 
     if (isNewDoc) {
+      setUploadedFile(file);
       setUploadedFileName(chosenName);
       setUploadedFileSize(chosenSize);
       setIsUploading(true);
@@ -227,6 +229,7 @@ export default function AgreementsView() {
         });
       }, 150);
     } else {
+      setUploadedVerFile(file);
       setUploadedVerFileName(chosenName);
       setUploadedVerFileSize(chosenSize);
       setIsUploadingVer(true);
@@ -250,6 +253,10 @@ export default function AgreementsView() {
 
     const customer = tenantCustomers.find((c) => c.id === newCustId);
     if (!customer) return;
+
+    if (uploadedFile) {
+      uploadedBlobsCache[uploadedFileName] = uploadedFile;
+    }
 
     addAgreement(
       {
@@ -279,11 +286,16 @@ export default function AgreementsView() {
     setNewVersionNotes('Initial uploaded master release.');
     setUploadedFileName('');
     setUploadedFileSize('');
+    setUploadedFile(null);
     setIsCreateOpen(false);
   };
 
   const handleAddVersion = () => {
     if (!selectedAgr || !newVerLabel || !uploadedVerFileName) return;
+
+    if (uploadedVerFile) {
+      uploadedBlobsCache[uploadedVerFileName] = uploadedVerFile;
+    }
 
     addDocumentVersion(selectedAgr.id, {
       versionLabel: newVerLabel,
@@ -304,6 +316,7 @@ export default function AgreementsView() {
     setNewVerNotes('');
     setUploadedVerFileName('');
     setUploadedVerFileSize('');
+    setUploadedVerFile(null);
     setUploadVerProgress(0);
   };
 
@@ -485,7 +498,7 @@ export default function AgreementsView() {
             <input
               type="file"
               ref={fileInputRef}
-              onChange={() => simulateFileUpload(true)}
+              onChange={(e) => handleFileUpload(e, true)}
               className="hidden"
             />
             
@@ -713,7 +726,7 @@ export default function AgreementsView() {
               <input
                 type="file"
                 ref={fileVerInputRef}
-                onChange={() => simulateFileUpload(false)}
+                onChange={(e) => handleFileUpload(e, false)}
                 className="hidden"
               />
 
