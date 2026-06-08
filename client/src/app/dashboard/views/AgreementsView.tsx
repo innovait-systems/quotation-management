@@ -494,7 +494,7 @@ export default function AgreementsView() {
 
           {/* FILE UPLOAD COMPONENT BLOCK */}
           <div className="space-y-2 border-t border-zinc-200/50 dark:border-zinc-800/40 pt-4">
-            <label className="text-xs font-bold text-slate-500 dark:text-zinc-400">File Attachment (Mock Upload) *</label>
+            <label className="text-xs font-bold text-slate-500 dark:text-zinc-400">File Attachment *</label>
             <input
               type="file"
               ref={fileInputRef}
@@ -534,7 +534,7 @@ export default function AgreementsView() {
                     <Trash2 size={14} />
                   </button>
                 </div>
-
+ 
                 {isUploading && (
                   <div className="mt-3.5 space-y-1">
                     <div className="flex justify-between text-[10px] font-bold text-slate-400">
@@ -553,7 +553,7 @@ export default function AgreementsView() {
                 {!isUploading && uploadProgress === 100 && (
                   <div className="mt-2.5 flex items-center gap-1 text-[10px] font-bold text-emerald-500">
                     <CheckCircle2 size={12} />
-                    <span>Secure mock-upload completed successfully!</span>
+                    <span>Secure upload completed successfully!</span>
                   </div>
                 )}
               </div>

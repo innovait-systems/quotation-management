@@ -809,7 +809,7 @@ export default function InvoicesView() {
                     Simulated SMTP Mail Delivery
                     <span className="px-1.5 py-0.5 rounded bg-emerald-500/10 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wide">Dispatched</span>
                   </h2>
-                  <p className="text-[10px] text-slate-400 dark:text-zinc-500 mt-0.5">Mock document router log: 1 transaction attachment sent to client mail coordinates</p>
+                  <p className="text-[10px] text-slate-400 dark:text-zinc-500 mt-0.5">Document router log: 1 transaction attachment sent to client mail coordinates</p>
                 </div>
               </div>
               <button

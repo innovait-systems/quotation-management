@@ -1013,7 +1013,7 @@ export default function TemplatesView() {
                     + Add Spacer
                   </button>
                 </div>
-                <p className="text-[10px] text-slate-400 leading-relaxed mb-2">Drag cards up/down to customize print ordering. Rearrangement renders reactively in the preview mockup.</p>
+                <p className="text-[10px] text-slate-400 leading-relaxed mb-2">Drag cards up/down to customize print ordering. Rearrangement renders reactively in the preview.</p>
 
                 <div className="space-y-2">
                   {activeTemplate.layoutOrder.map((blockId, idx) => {
@@ -1193,11 +1193,11 @@ export default function TemplatesView() {
             {/* 2. Live Interactive Preview Right Column */}
             <div className="xl:col-span-7 space-y-4">
               <div className="flex justify-between items-center">
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Real-time Print Preview Mockup</p>
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Real-time Print Preview</p>
                 <span className="text-[10px] font-bold text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20 animate-pulse">Reactive Canvas Active</span>
               </div>
 
-              {/* Document mockup frame */}
+              {/* Document preview frame */}
               <div
                 className="relative border border-zinc-200 dark:border-zinc-800 rounded-3xl bg-white text-zinc-900 p-8 min-h-[640px] shadow-lg overflow-hidden transition-all duration-300 select-none"
                 style={{

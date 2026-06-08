@@ -451,7 +451,7 @@ export default function WelcomePortalGate() {
                   })}
                   {cheatsheetUsers.length === 0 && (
                     <p className="text-[10px] text-slate-400 dark:text-zinc-500 italic text-center py-2">
-                      No mock user accounts registered under this workspace.
+                      No user accounts registered under this workspace.
                     </p>
                   )}
                 </div>
@@ -463,7 +463,7 @@ export default function WelcomePortalGate() {
                     Please enter a correct organization code to view its pre-seeded demo accounts.
                     <br />
                     <span className="font-mono text-indigo-500 dark:text-indigo-400 mt-1.5 block">
-                      Valid codes: "innovait-systems", "spacex-cloud", "wayne-enterprises", "tesla-motors"
+                      Valid codes: &apos;innovait-systems&apos;, &apos;spacex-cloud&apos;, &apos;wayne-enterprises&apos;, &apos;tesla-motors&apos;
                     </span>
                   </p>
                 </div>
