@@ -14,9 +14,7 @@ import {
   Clock,
   Sparkles,
   Zap,
-  RefreshCw,
   Activity,
-  ChevronRight,
 } from 'lucide-react';
 
 const getMoMChange = (currentList: any[], valueKey: string, dateKey: string) => {
@@ -96,7 +94,7 @@ export default function DashboardHubView() {
   const [metrics, setMetrics] = useState<MetricCard[]>([]);
   const [logs, setLogs] = useState<ActivityLog[]>([]);
   const [actions, setActions] = useState<PendingAction[]>([]);
-  const [isRefreshing, setIsRefreshing] = useState(false);
+  // const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Dynamic monthly operational revenue calculations from exact store data
   const tenantInvoices = invoices.filter(i => i.tenantId === activeTenant.id);
@@ -291,6 +289,7 @@ export default function DashboardHubView() {
     setActions(dynamicActions.slice(0, 5));
   }, [activeTenant, quotes, invoices, orders]);
 
+  /*
   const handleSimulateTransaction = () => {
     setIsRefreshing(true);
     setTimeout(() => {
@@ -382,6 +381,7 @@ export default function DashboardHubView() {
       setIsRefreshing(false);
     }, 800);
   };
+  */
 
   return (
     <div className="space-y-8 animate-in fade-in duration-300">
@@ -401,6 +401,7 @@ export default function DashboardHubView() {
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
+          {/* Hide the Simulate Live Transaction option
           <button
             onClick={handleSimulateTransaction}
             disabled={isRefreshing}
@@ -409,6 +410,7 @@ export default function DashboardHubView() {
             <RefreshCw size={14} className={isRefreshing ? 'animate-spin' : ''} />
             <span>Simulate Live Transaction</span>
           </button>
+          */}
 
           {/* Next Phase: AI Design Canvas button hidden
           <button

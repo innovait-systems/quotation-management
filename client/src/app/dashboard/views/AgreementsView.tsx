@@ -86,6 +86,23 @@ export default function AgreementsView() {
     }
   };
 
+  const handleDownloadFile = (fileName: string, title: string, versionLabel: string) => {
+    const content = `Agreement/Document Download File: ${fileName}\n` +
+      `Title: ${title}\n` +
+      `Version: ${versionLabel}\n` +
+      `Generated At: ${new Date().toLocaleString()}\n\n` +
+      `This is a downloaded document for the active workspace.`;
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   // Columns for the Agreements Table
   const columns: Column<Agreement>[] = [
     {
@@ -138,6 +155,27 @@ export default function AgreementsView() {
       label: 'Status',
       sortable: true,
       render: (row) => <StatusBadge status={row.status} />
+    },
+    {
+      key: 'actions',
+      label: 'Actions',
+      render: (row) => {
+        const activeVer = row.versions[row.versions.length - 1];
+        return (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              if (activeVer) {
+                handleDownloadFile(activeVer.fileName, row.title, activeVer.versionLabel);
+              }
+            }}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-zinc-200 dark:border-zinc-800 text-slate-600 dark:text-zinc-300 hover:text-indigo-600 hover:border-indigo-500/30 hover:bg-indigo-500/5 transition-all text-xs font-bold cursor-pointer"
+          >
+            <Download size={12} />
+            <span>Download</span>
+          </button>
+        );
+      }
     }
   ];
 
@@ -548,12 +586,14 @@ export default function AgreementsView() {
                 <button
                   onClick={() => {
                     const currentVer = selectedAgr.versions[selectedAgr.versions.length - 1];
-                    alert(`Downloading simulated file attachment: ${currentVer.fileName}`);
+                    if (currentVer) {
+                      handleDownloadFile(currentVer.fileName, selectedAgr.title, currentVer.versionLabel);
+                    }
                   }}
-                  className="px-4 py-2 rounded-xl border border-zinc-200 dark:border-zinc-800 text-xs font-bold text-slate-600 dark:text-zinc-300 flex items-center gap-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all active:scale-95"
+                  className="px-4 py-2 rounded-xl border border-zinc-200 dark:border-zinc-800 text-xs font-bold text-slate-600 dark:text-zinc-300 flex items-center gap-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all active:scale-95 cursor-pointer"
                 >
                   <Download size={12} />
-                  <span>Simulate Download</span>
+                  <span>Download</span>
                 </button>
               </div>
             </div>
@@ -566,6 +606,22 @@ export default function AgreementsView() {
             {/* META LABELS */}
             <div className="flex flex-wrap items-center gap-3">
               <StatusBadge status={selectedAgr.status} size="md" />
+              
+              <button
+                onClick={() => {
+                  const nextStatus = selectedAgr.status === 'ACTIVE' ? 'EXPIRED' : 'ACTIVE';
+                  updateAgreementStatus(selectedAgr.id, nextStatus);
+                  setSelectedAgr({ ...selectedAgr, status: nextStatus });
+                }}
+                className={`px-2.5 py-1 rounded-xl text-[10px] font-extrabold uppercase tracking-wider transition-all border cursor-pointer ${
+                  selectedAgr.status === 'ACTIVE'
+                    ? 'bg-rose-500/10 border-rose-500/20 text-rose-600 dark:text-rose-400 hover:bg-rose-500/15'
+                    : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/15'
+                }`}
+              >
+                Set as {selectedAgr.status === 'ACTIVE' ? 'Inactive' : 'Active'}
+              </button>
+
               <span className="px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-widest bg-zinc-100 dark:bg-zinc-800 text-slate-500 dark:text-zinc-400 rounded-full border border-zinc-200/50 dark:border-zinc-800/40">
                 {selectedAgr.documentType}
               </span>
@@ -750,7 +806,7 @@ export default function AgreementsView() {
                           </p>
 
                           <div className="flex items-center gap-1.5 text-[9px] font-semibold text-slate-400 hover:text-indigo-500 cursor-pointer w-fit select-none"
-                               onClick={() => alert(`Simulating file download: ${ver.fileName}`)}>
+                               onClick={() => handleDownloadFile(ver.fileName, selectedAgr.title, ver.versionLabel)}>
                             <Download size={10} />
                             <span>Download {ver.fileName}</span>
                           </div>
