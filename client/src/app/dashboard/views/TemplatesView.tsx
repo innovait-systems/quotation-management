@@ -40,6 +40,24 @@ export default function TemplatesView() {
   const previewLogoUrl = activeTemplate?.config?.logoUrl || activeTenant.logoUrl;
   const previewCompanyAddress = activeTemplate?.config?.companyAddress || activeTenant.address;
 
+  if (!activeTemplate) {
+    return (
+      <div className="space-y-8 animate-in fade-in duration-300">
+        <div>
+          <h1 className="text-2xl font-black tracking-tight text-slate-900 dark:text-zinc-50">
+            Document Templates
+          </h1>
+          <p className="text-xs text-slate-400 dark:text-zinc-500 mt-1">
+            Design and organize print layout templates for Quotations, Invoices, Purchase Orders, and Service contracts.
+          </p>
+        </div>
+        <div className="flex flex-col items-center justify-center py-20 text-center bg-white dark:bg-zinc-950 rounded-3xl border border-zinc-200/50 dark:border-zinc-800/40 shadow-xs">
+          <p className="text-sm font-bold text-slate-600 dark:text-zinc-300">Loading design templates...</p>
+        </div>
+      </div>
+    );
+  }
+
   const handleAddSpacer = () => {
     if (!activeTemplate) return;
     const newSpacerId = `spacer_${Date.now()}`;
