@@ -63,7 +63,11 @@ const ALL_ROLES: UserRole[] = ['SUPER_ADMIN', 'TENANT_ADMIN', 'FINANCE', 'SALES'
 const ASSIGNABLE_ROLES: UserRole[] = ['TENANT_ADMIN', 'FINANCE', 'SALES', 'OPERATIONS', 'VIEWER'];
 
 export default function UsersView() {
-  const { activeTenant, currentUser, activeRole, users, addUser, updateUser, deleteUser, switchUser } = useTenantStore();
+  const { activeTenant, currentUser, activeRole, users, fetchUsers, addUser, updateUser, deleteUser, switchUser } = useTenantStore();
+
+  React.useEffect(() => {
+    fetchUsers(activeTenant.id);
+  }, [activeTenant.id, fetchUsers]);
 
   // Filter users for the current tenant
   const tenantUsers = useMemo(() => 

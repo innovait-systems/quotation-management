@@ -222,10 +222,11 @@ interface TenantState {
   updateTenant: (tenantId: string, updates: Partial<Tenant>) => void;
   deleteTenant: (tenantId: string) => void;
   updateRolePermissions: (role: UserRole, resource: Resource, action: string, value: boolean) => void;
+  fetchUsers: (tenantId: string) => Promise<void>;
   // User CRUD
   addUser: (user: Omit<User, 'id' | 'createdAt' | 'isActive'>) => Promise<void>;
-  updateUser: (userId: string, updates: Partial<Pick<User, 'firstName' | 'lastName' | 'email' | 'role' | 'isActive' | 'password'>>) => void;
-  deleteUser: (userId: string) => void;
+  updateUser: (userId: string, updates: Partial<Pick<User, 'firstName' | 'lastName' | 'email' | 'role' | 'isActive' | 'password'>>) => Promise<void>;
+  deleteUser: (userId: string) => Promise<void>;
   switchUser: (userId: string) => void;
   getUsersForTenant: (tenantId: string) => User[];
 }
@@ -1020,6 +1021,19 @@ export const useTenantStore = create<TenantState>()(
         };
       }),
 
+      fetchUsers: async (tenantId) => {
+        try {
+          const data = await apiRequest(`/api/v1/governance/users/${tenantId}`, {
+            headers: {
+              'x-system-admin-key': 'antigravity_master_sysadmin_secret_2026'
+            }
+          });
+          set({ users: data || [] });
+        } catch (err) {
+          console.error('Error fetching users:', err);
+        }
+      },
+
       // ── User CRUD ──────────────────────────────────────────────
 
       addUser: async (userData) => {
@@ -1072,46 +1086,75 @@ export const useTenantStore = create<TenantState>()(
         }
       },
 
-      updateUser: (userId, updates) => set((state) => {
-        const updatedUsers = state.users.map(u => 
-          u.id === userId ? { ...u, ...updates } : u
-        );
-        // If we're updating the current user, reflect changes immediately
-        const updatedCurrentUser = state.currentUser.id === userId
-          ? { ...state.currentUser, ...updates }
-          : state.currentUser;
-        const resolvedRole = (updatedCurrentUser.role === 'SUPER_ADMIN' && updatedCurrentUser.email.toLowerCase() !== 'it@innovait-systems.com')
-          ? 'TENANT_ADMIN'
-          : updatedCurrentUser.role;
+      updateUser: async (userId, updates) => {
+        try {
+          await apiRequest(`/api/v1/governance/users/${userId}`, {
+            method: 'PUT',
+            headers: {
+              'x-system-admin-key': 'antigravity_master_sysadmin_secret_2026'
+            },
+            body: JSON.stringify(updates),
+          });
 
-        return {
-          users: updatedUsers,
-          currentUser: {
-            ...updatedCurrentUser,
-            role: resolvedRole
-          },
-          activeRole: resolvedRole,
-        };
-      }),
+          set((state) => {
+            const updatedUsers = state.users.map(u => 
+              u.id === userId ? { ...u, ...updates } : u
+            );
+            // If we're updating the current user, reflect changes immediately
+            const updatedCurrentUser = state.currentUser.id === userId
+              ? { ...state.currentUser, ...updates }
+              : state.currentUser;
+            const resolvedRole = (updatedCurrentUser.role === 'SUPER_ADMIN' && updatedCurrentUser.email.toLowerCase() !== 'it@innovait-systems.com')
+              ? 'TENANT_ADMIN'
+              : updatedCurrentUser.role;
 
-      deleteUser: (userId) => set((state) => {
-        // Prevent deleting the currently active user
-        if (state.currentUser.id === userId) return {};
-        const deletedUser = state.users.find(u => u.id === userId);
-        if (deletedUser) {
-          // Dispatch alert notification
-          useNotificationStore.getState().addNotification(
-            'User Access Removed',
-            `User account deleted: ${deletedUser.firstName} ${deletedUser.lastName}`,
-            'alert',
-            'USERS',
-            deletedUser.tenantId
-          );
+            return {
+              users: updatedUsers,
+              currentUser: {
+                ...updatedCurrentUser,
+                role: resolvedRole
+              },
+              activeRole: resolvedRole,
+            };
+          });
+        } catch (err) {
+          console.error('Error updating user:', err);
+          alert(`Failed to update user: ${err instanceof Error ? err.message : err}`);
         }
-        return {
-          users: state.users.filter(u => u.id !== userId),
-        };
-      }),
+      },
+
+      deleteUser: async (userId) => {
+        try {
+          await apiRequest(`/api/v1/governance/users/${userId}`, {
+            method: 'DELETE',
+            headers: {
+              'x-system-admin-key': 'antigravity_master_sysadmin_secret_2026'
+            },
+          });
+
+          set((state) => {
+            // Prevent deleting the currently active user
+            if (state.currentUser.id === userId) return {};
+            const deletedUser = state.users.find(u => u.id === userId);
+            if (deletedUser) {
+              // Dispatch alert notification
+              useNotificationStore.getState().addNotification(
+                'User Access Removed',
+                `User account deleted: ${deletedUser.firstName} ${deletedUser.lastName}`,
+                'alert',
+                'USERS',
+                deletedUser.tenantId
+              );
+            }
+            return {
+              users: state.users.filter(u => u.id !== userId),
+            };
+          });
+        } catch (err) {
+          console.error('Error deleting user:', err);
+          alert(`Failed to delete user: ${err instanceof Error ? err.message : err}`);
+        }
+      },
 
       switchUser: (userId) => set((state) => {
         const user = state.users.find(u => u.id === userId);

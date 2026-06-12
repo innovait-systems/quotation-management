@@ -249,4 +249,39 @@ export class GovernanceService {
       data,
     });
   }
+
+  async listUsers(tenantId: string) {
+    return this.prisma.user.findMany({
+      where: { tenantId },
+      orderBy: { createdAt: 'asc' },
+    });
+  }
+
+  async updateUser(userId: string, body: any) {
+    const { firstName, lastName, email, role, isActive, password } = body;
+    const data: any = {};
+    if (firstName !== undefined) data.firstName = firstName;
+    if (lastName !== undefined) data.lastName = lastName;
+    if (email !== undefined) data.email = email;
+    if (role !== undefined) {
+      const mappedRole = UserRole[role.toUpperCase() as keyof typeof UserRole];
+      if (mappedRole) data.role = mappedRole;
+    }
+    if (isActive !== undefined) data.isActive = isActive;
+    if (password !== undefined && password !== '') {
+      const salt = await bcrypt.genSalt(10);
+      data.passwordHash = await bcrypt.hash(password, salt);
+    }
+
+    return this.prisma.user.update({
+      where: { id: userId },
+      data,
+    });
+  }
+
+  async deleteUser(userId: string) {
+    return this.prisma.user.delete({
+      where: { id: userId },
+    });
+  }
 }

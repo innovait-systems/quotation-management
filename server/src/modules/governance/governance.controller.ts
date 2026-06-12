@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Headers, UnauthorizedException, BadRequestException, HttpStatus, HttpCode, Param } from '@nestjs/common';
+import { Controller, Post, Get, Put, Delete, Body, Headers, UnauthorizedException, BadRequestException, HttpStatus, HttpCode, Param } from '@nestjs/common';
 import { GovernanceService } from './governance.service';
 import { AppConfigService } from '../../common/config/app-config.service';
 
@@ -67,6 +67,34 @@ export class GovernanceController {
     }
 
     return this.governanceService.createUser(body);
+  }
+
+  @Get('users/:tenantId')
+  async listUsers(
+    @Headers('x-system-admin-key') adminKey: string,
+    @Param('tenantId') tenantId: string,
+  ) {
+    this.validateAdminKey(adminKey);
+    return this.governanceService.listUsers(tenantId);
+  }
+
+  @Put('users/:id')
+  async updateUser(
+    @Headers('x-system-admin-key') adminKey: string,
+    @Param('id') userId: string,
+    @Body() body: any,
+  ) {
+    this.validateAdminKey(adminKey);
+    return this.governanceService.updateUser(userId, body);
+  }
+
+  @Delete('users/:id')
+  async deleteUser(
+    @Headers('x-system-admin-key') adminKey: string,
+    @Param('id') userId: string,
+  ) {
+    this.validateAdminKey(adminKey);
+    return this.governanceService.deleteUser(userId);
   }
 
   @Post('tenants/:id')
