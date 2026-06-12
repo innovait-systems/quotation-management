@@ -136,10 +136,26 @@ export const useTemplatesStore = create<TemplatesState>()((set, get) => ({
 
   fetchTemplates: async (tenantId) => {
     try {
-      const data = await apiRequest(`/api/v1/templates`, {
+      let data = await apiRequest(`/api/v1/templates`, {
         headers: { 'x-tenant-id': tenantId },
       });
       
+      if (!data || data.length === 0) {
+        const types: TemplateEntityType[] = ['QUOTATION', 'PURCHASE_ORDER', 'INVOICE', 'SERVICE'];
+        const names = {
+          QUOTATION: 'Default Quotation Theme',
+          PURCHASE_ORDER: 'Default PO Theme',
+          INVOICE: 'Default Invoice Theme',
+          SERVICE: 'Default Service SLA Theme'
+        };
+        for (const type of types) {
+          await get().createTemplate(names[type], type, {}, tenantId);
+        }
+        data = await apiRequest(`/api/v1/templates`, {
+          headers: { 'x-tenant-id': tenantId },
+        });
+      }
+
       const mapped = data.map((t: any) => ({
         id: t.id,
         name: t.name,
