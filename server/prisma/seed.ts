@@ -149,16 +149,17 @@ async function main() {
 
   const salt = await bcrypt.genSalt(10);
 
+  const defaultPasswordHash = await bcrypt.hash('password', salt);
+
   // 3. Seed Users
   // Seed admin for Master Tenant
-  const masterPasswordHash = await bcrypt.hash('AdminSecure2026!', salt);
   const masterAdmin = await prisma.user.upsert({
     where: { email: 'admin@antigravity.com' },
     update: {},
     create: {
       tenantId: masterTenant.id,
       email: 'admin@antigravity.com',
-      passwordHash: masterPasswordHash,
+      passwordHash: defaultPasswordHash,
       firstName: 'Rajesh',
       lastName: 'S.',
       role: UserRole.SUPER_ADMIN,
@@ -169,14 +170,13 @@ async function main() {
   console.log(`✅ Master Admin seeded: ${masterAdmin.email}`);
 
   // Seed owner for InnovaIT Systems Tenant
-  const innovaitPasswordHash = await bcrypt.hash('InnovaITSecure2026!', salt);
   const innovaitAdmin = await prisma.user.upsert({
     where: { email: 'it@innovait-systems.com' },
     update: {},
     create: {
       tenantId: innovaitTenant.id,
       email: 'it@innovait-systems.com',
-      passwordHash: innovaitPasswordHash,
+      passwordHash: defaultPasswordHash,
       firstName: 'InnovaIT',
       lastName: 'Owner',
       role: UserRole.SUPER_ADMIN,
@@ -185,8 +185,6 @@ async function main() {
     }
   });
   console.log(`✅ Platform Owner seeded: ${innovaitAdmin.email}`);
-
-  const defaultPasswordHash = await bcrypt.hash('password', salt);
 
   // Seed SpaceX Admin explicitly
   const spacexAdmin = await prisma.user.upsert({
