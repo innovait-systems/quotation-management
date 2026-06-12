@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { apiRequest } from '../utils/apiClient';
 
 export interface AgreementVersion {
   id: string;
@@ -28,85 +28,110 @@ export interface Agreement {
 
 interface AgreementsState {
   agreements: Agreement[];
+  fetchAgreements: (tenantId: string) => Promise<void>;
   addAgreement: (
     agreement: Omit<Agreement, 'id' | 'createdAt' | 'updatedAt' | 'versions'>,
     initialVersion: Omit<AgreementVersion, 'id' | 'uploadedAt' | 'uploadedBy'>
-  ) => void;
+  ) => Promise<void>;
   addDocumentVersion: (
     agreementId: string,
     newVersion: Omit<AgreementVersion, 'id' | 'uploadedAt' | 'uploadedBy'>
-  ) => void;
-  updateAgreementStatus: (agreementId: string, status: Agreement['status']) => void;
-  deleteAgreement: (agreementId: string) => void;
+  ) => Promise<void>;
+  updateAgreementStatus: (agreementId: string, status: Agreement['status']) => Promise<void>;
+  deleteAgreement: (agreementId: string) => Promise<void>;
   getAgreementsForTenant: (tenantId: string) => Agreement[];
 }
 
-const seedAgreements: Agreement[] = [];
+export const useAgreementsStore = create<AgreementsState>()((set, get) => ({
+  agreements: [],
 
-export const useAgreementsStore = create<AgreementsState>()(
-  persist(
-    (set, get) => ({
-      agreements: seedAgreements,
+  fetchAgreements: async (tenantId) => {
+    try {
+      const data = await apiRequest(`/api/v1/agreements`, {
+        headers: { 'x-tenant-id': tenantId },
+      });
+      set({ agreements: data });
+    } catch (err) {
+      console.error('Failed to fetch agreements:', err);
+    }
+  },
 
-      addAgreement: (agreement, initialVersion) => set((state) => {
-        const timestamp = new Date().toISOString().slice(0, 19).replace('T', ' ');
-        const newVersionObj: AgreementVersion = {
-          ...initialVersion,
-          id: `ver-${Date.now()}-1`,
-          uploadedBy: 'Rajesh S. (You)',
-          uploadedAt: timestamp
-        };
-
-        const newAgr: Agreement = {
+  addAgreement: async (agreement, initialVersion) => {
+    try {
+      const newAgr = await apiRequest(`/api/v1/agreements`, {
+        method: 'POST',
+        headers: { 'x-tenant-id': agreement.tenantId },
+        body: JSON.stringify({
           ...agreement,
-          id: `agr-${Date.now()}`,
-          createdAt: new Date().toISOString().slice(0, 10),
-          updatedAt: new Date().toISOString().slice(0, 10),
-          versions: [newVersionObj]
-        };
+          initialVersion,
+        }),
+      });
+      set((state) => ({
+        agreements: [newAgr, ...state.agreements],
+      }));
+    } catch (err) {
+      console.error('Failed to add agreement:', err);
+    }
+  },
 
-        return {
-          agreements: [newAgr, ...state.agreements]
-        };
-      }),
+  addDocumentVersion: async (agreementId, newVersion) => {
+    const tenantId = get().agreements.find(a => a.id === agreementId)?.tenantId || '';
+    try {
+      const savedVersion = await apiRequest(`/api/v1/agreements/${agreementId}/versions`, {
+        method: 'POST',
+        headers: { 'x-tenant-id': tenantId },
+        body: JSON.stringify(newVersion),
+      });
+      set((state) => ({
+        agreements: state.agreements.map((a) => {
+          if (a.id !== agreementId) return a;
+          return {
+            ...a,
+            updatedAt: new Date().toISOString().slice(0, 10),
+            versions: [...a.versions, savedVersion],
+          };
+        }),
+      }));
+    } catch (err) {
+      console.error('Failed to add agreement version:', err);
+    }
+  },
 
-      addDocumentVersion: (agreementId, newVersion) => set((state) => {
-        const timestamp = new Date().toISOString().slice(0, 19).replace('T', ' ');
-        const newVersionObj: AgreementVersion = {
-          ...newVersion,
-          id: `ver-${Date.now()}-2`,
-          uploadedBy: 'Rajesh S. (You)',
-          uploadedAt: timestamp
-        };
-
-        return {
-          agreements: state.agreements.map((a) => {
-            if (a.id !== agreementId) return a;
-            return {
-              ...a,
-              updatedAt: new Date().toISOString().slice(0, 10),
-              versions: [...a.versions, newVersionObj] // Newest version goes at the end of the history
-            };
-          })
-        };
-      }),
-
-      updateAgreementStatus: (agreementId, status) => set((state) => ({
+  updateAgreementStatus: async (agreementId, status) => {
+    const tenantId = get().agreements.find(a => a.id === agreementId)?.tenantId || '';
+    try {
+      await apiRequest(`/api/v1/agreements/${agreementId}`, {
+        method: 'PUT',
+        headers: { 'x-tenant-id': tenantId },
+        body: JSON.stringify({ status }),
+      });
+      set((state) => ({
         agreements: state.agreements.map((a) =>
           a.id === agreementId ? { ...a, status, updatedAt: new Date().toISOString().slice(0, 10) } : a
-        )
-      })),
-
-      deleteAgreement: (agreementId) => set((state) => ({
-        agreements: state.agreements.filter((a) => a.id !== agreementId)
-      })),
-
-      getAgreementsForTenant: (tenantId) => {
-        return get().agreements.filter((a) => a.tenantId === tenantId);
-      }
-    }),
-    {
-      name: 'antigravity-agreements-storage',
+        ),
+      }));
+    } catch (err) {
+      console.error('Failed to update agreement status:', err);
     }
-  )
-);
+  },
+
+  deleteAgreement: async (agreementId) => {
+    const tenantId = get().agreements.find(a => a.id === agreementId)?.tenantId || '';
+    try {
+      await apiRequest(`/api/v1/agreements/${agreementId}`, {
+        method: 'DELETE',
+        headers: { 'x-tenant-id': tenantId },
+      });
+      set((state) => ({
+        agreements: state.agreements.filter((a) => a.id !== agreementId),
+      }));
+    } catch (err) {
+      console.error('Failed to delete agreement:', err);
+    }
+  },
+
+  getAgreementsForTenant: (tenantId) => {
+    return get().agreements.filter((a) => a.tenantId === tenantId);
+  },
+}));
+

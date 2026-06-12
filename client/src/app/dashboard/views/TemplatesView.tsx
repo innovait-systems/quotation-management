@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTenantStore } from '../../../store/tenantStore';
 import { useTemplatesStore, TemplateEntityType } from '../../../store/templatesStore';
 import {
@@ -15,12 +15,17 @@ export default function TemplatesView() {
   const {
     templates,
     activeTemplateIds,
+    fetchTemplates,
     createTemplate,
     updateTemplate,
     deleteTemplate,
     setDefaultTemplate,
     resetTemplate
   } = useTemplatesStore();
+
+  useEffect(() => {
+    fetchTemplates(activeTenant.id);
+  }, [activeTenant.id, fetchTemplates]);
 
   const [selectedTemplateEntity, setSelectedTemplateEntity] = useState<TemplateEntityType>('QUOTATION');
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
@@ -571,9 +576,9 @@ export default function TemplatesView() {
                     <div className="flex gap-2">
                       <button
                         type="button"
-                        onClick={() => {
+                        onClick={async () => {
                           if (!newTemplateName.trim()) return;
-                          const newId = createTemplate(newTemplateName.trim(), selectedTemplateEntity);
+                          const newId = await createTemplate(newTemplateName.trim(), selectedTemplateEntity);
                           setSelectedTemplateId(newId);
                           setNewTemplateName('');
                           setShowCreateForm(false);

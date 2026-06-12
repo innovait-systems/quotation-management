@@ -18,14 +18,20 @@ const uploadedBlobsCache: Record<string, Blob> = {};
 
 export default function AgreementsView() {
   const { activeTenant } = useTenantStore();
-  const { getCustomersForTenant } = useCustomersStore();
+  const { getCustomersForTenant, fetchCustomers } = useCustomersStore();
   const {
     getAgreementsForTenant,
+    fetchAgreements,
     addAgreement,
     addDocumentVersion,
     updateAgreementStatus,
     deleteAgreement
   } = useAgreementsStore();
+
+  useEffect(() => {
+    fetchCustomers(activeTenant.id);
+    fetchAgreements(activeTenant.id);
+  }, [activeTenant.id, fetchCustomers, fetchAgreements]);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [docTypeFilter, setDocTypeFilter] = useState('ALL');

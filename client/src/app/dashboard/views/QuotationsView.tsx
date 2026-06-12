@@ -128,8 +128,12 @@ export default function QuotationsView() {
   const { templates, activeTemplateIds } = useTemplatesStore();
   const { customers } = useCustomersStore();
 
-  const { quotes: allQuotes, addQuotation, updateQuotation, deleteQuotation, addInvoice, addPurchaseOrder } = useDocumentStore();
+  const { quotes: allQuotes, fetchDocuments, addQuotation, updateQuotation, deleteQuotation, addInvoice, addPurchaseOrder } = useDocumentStore();
   const [quotes, setQuotes] = useState<QuotationRecord[]>([]);
+
+  React.useEffect(() => {
+    fetchDocuments(activeTenant.id);
+  }, [activeTenant.id, fetchDocuments]);
 
   React.useEffect(() => {
     setQuotes(allQuotes.filter(q => q.tenantId === activeTenant.id));

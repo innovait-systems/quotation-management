@@ -1,5 +1,7 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { apiRequest } from '../utils/apiClient';
+import { useTenantStore } from './tenantStore';
+
 
 export type TemplateEntityType = 'QUOTATION' | 'PURCHASE_ORDER' | 'INVOICE' | 'SERVICE';
 
@@ -36,9 +38,10 @@ export interface DocumentTemplate {
 interface TemplatesState {
   templates: DocumentTemplate[];
   activeTemplateIds: Record<TemplateEntityType, string>;
-  createTemplate: (name: string, entityType: TemplateEntityType, config?: Partial<TemplateConfig>) => string;
-  updateTemplate: (id: string, updates: Partial<Omit<DocumentTemplate, 'config'>> & { config?: Partial<TemplateConfig> }) => void;
-  deleteTemplate: (id: string) => void;
+  fetchTemplates: (tenantId: string) => Promise<void>;
+  createTemplate: (name: string, entityType: TemplateEntityType, config?: Partial<TemplateConfig>, tenantId?: string) => Promise<string>;
+  updateTemplate: (id: string, updates: Partial<Omit<DocumentTemplate, 'config'>> & { config?: Partial<TemplateConfig> }, tenantId?: string) => Promise<void>;
+  deleteTemplate: (id: string, tenantId?: string) => Promise<void>;
   setDefaultTemplate: (entityType: TemplateEntityType, id: string) => void;
   resetTemplate: (entityType: TemplateEntityType) => void;
   getTemplate: (idOrType: string) => DocumentTemplate;
@@ -122,186 +125,192 @@ const defaultLayout: string[] = [
   'spacer'
 ];
 
-const seedTemplates: DocumentTemplate[] = [
-  {
-    id: 'quote-dev-support',
-    name: 'Development Support Theme',
-    entityType: 'QUOTATION',
-    layoutOrder: ['brand_logo', 'org_details', 'doc_title', 'company_details', 'customer_details', 'details_box', 'main_table', 'custom_fields', 'signatures', 'footer_terms', 'spacer'],
-    config: {
-      ...defaultConfigs.QUOTATION,
-      fontFamily: 'Plus Jakarta Sans',
-      accentColor: '#6366f1',
-    }
+export const useTemplatesStore = create<TemplatesState>()((set, get) => ({
+  templates: [],
+  activeTemplateIds: {
+    QUOTATION: 'quote-dev-support',
+    PURCHASE_ORDER: 'po-supplier',
+    INVOICE: 'invoice-standard',
+    SERVICE: 'service-sla',
   },
-  {
-    id: 'quote-doc-remediation',
-    name: 'Document Remediation Theme',
-    entityType: 'QUOTATION',
-    layoutOrder: ['brand_logo', 'org_details', 'doc_title', 'company_details', 'customer_details', 'details_box', 'main_table', 'custom_fields', 'footer_terms', 'spacer'], // no signature
-    config: {
-      ...defaultConfigs.QUOTATION,
-      fontFamily: 'Outfit',
-      accentColor: '#10b981',
-      watermarkText: 'QUOTATION',
-      footerTerms: 'This document remediation proposal is subject to detailed page analysis. Pricing is based on unit measurements and file size.',
-      showSignature: false,
-    }
-  },
-  {
-    id: 'po-supplier',
-    name: 'Supplier Procurement Theme',
-    entityType: 'PURCHASE_ORDER',
-    layoutOrder: ['brand_logo', 'org_details', 'doc_title', 'company_details', 'customer_details', 'details_box', 'main_table', 'custom_fields', 'signatures', 'footer_terms', 'spacer'],
-    config: {
-      ...defaultConfigs.PURCHASE_ORDER,
-      fontFamily: 'Plus Jakarta Sans',
-      accentColor: '#8b5cf6',
-    }
-  },
-  {
-    id: 'invoice-standard',
-    name: 'Standard Billing Theme',
-    entityType: 'INVOICE',
-    layoutOrder: ['brand_logo', 'org_details', 'doc_title', 'company_details', 'customer_details', 'details_box', 'main_table', 'custom_fields', 'upi_qr', 'signatures', 'footer_terms', 'spacer'],
-    config: {
-      ...defaultConfigs.INVOICE,
-      fontFamily: 'Outfit',
-      accentColor: '#10b981',
-    }
-  },
-  {
-    id: 'service-sla',
-    name: 'SLA Deliverables Theme',
-    entityType: 'SERVICE',
-    layoutOrder: ['brand_logo', 'org_details', 'doc_title', 'company_details', 'customer_details', 'details_box', 'main_table', 'custom_fields', 'footer_terms', 'spacer'],
-    config: {
-      ...defaultConfigs.SERVICE,
-      fontFamily: 'Inter',
-      accentColor: '#0ea5e9',
-    }
-  }
-];
 
-export const useTemplatesStore = create<TemplatesState>()(
-  persist(
-    (set, get) => ({
-      templates: seedTemplates,
-      activeTemplateIds: {
-        QUOTATION: 'quote-dev-support',
-        PURCHASE_ORDER: 'po-supplier',
-        INVOICE: 'invoice-standard',
-        SERVICE: 'service-sla',
-      },
+  fetchTemplates: async (tenantId) => {
+    try {
+      const data = await apiRequest(`/api/v1/templates`, {
+        headers: { 'x-tenant-id': tenantId },
+      });
+      
+      const mapped = data.map((t: any) => ({
+        id: t.id,
+        name: t.name,
+        entityType: t.entityType as TemplateEntityType,
+        layoutOrder: t.layoutConfig?.layoutOrder || [...defaultLayout],
+        config: t.themeConfig || { ...defaultConfigs[t.entityType as TemplateEntityType] },
+      }));
 
-      createTemplate: (name, entityType, config) => {
-        const id = `${entityType.toLowerCase()}-${Date.now()}`;
-        const newTpl: DocumentTemplate = {
-          id,
-          name,
-          entityType,
-          layoutOrder: entityType === 'INVOICE' 
-            ? [...defaultLayout] 
-            : defaultLayout.filter(b => b !== 'upi_qr' && (entityType !== 'SERVICE' || b !== 'signatures')),
-          config: {
-            ...defaultConfigs[entityType],
-            ...config,
-          }
-        };
-        set((state) => ({
-          templates: [...state.templates, newTpl]
-        }));
-        return id;
-      },
+      set({ templates: mapped });
 
-      updateTemplate: (id, updates) => set((state) => {
-        const updated = state.templates.map((t) => {
+      // Automatically set activeTemplateIds based on first available of each type
+      const activeIds = { ...get().activeTemplateIds };
+      ['QUOTATION', 'PURCHASE_ORDER', 'INVOICE', 'SERVICE'].forEach((type) => {
+        const first = mapped.find((t: any) => t.entityType === type);
+        if (first) {
+          activeIds[type as TemplateEntityType] = first.id;
+        }
+      });
+      set({ activeTemplateIds: activeIds });
+    } catch (err) {
+      console.error('Failed to fetch templates:', err);
+    }
+  },
+
+  createTemplate: async (name, entityType, config, tenantId) => {
+    const activeTenantId = tenantId || useTenantStore.getState().activeTenant?.id || '';
+    try {
+      const newTplObj = {
+        name,
+        entityType,
+        layoutConfig: { layoutOrder: entityType === 'INVOICE' 
+          ? [...defaultLayout] 
+          : defaultLayout.filter(b => b !== 'upi_qr' && (entityType !== 'SERVICE' || b !== 'signatures'))
+        },
+        themeConfig: {
+          ...defaultConfigs[entityType],
+          ...config,
+        },
+        htmlMarkup: '<h1>Template Placeholder</h1>',
+      };
+
+      const res = await apiRequest(`/api/v1/templates`, {
+        method: 'POST',
+        headers: { 'x-tenant-id': activeTenantId },
+        body: JSON.stringify(newTplObj),
+      });
+
+      const mapped: DocumentTemplate = {
+        id: res.id,
+        name: res.name,
+        entityType: res.entityType as TemplateEntityType,
+        layoutOrder: res.layoutConfig?.layoutOrder || [],
+        config: res.themeConfig || {},
+      };
+
+      set((state) => ({
+        templates: [...state.templates, mapped],
+      }));
+
+      return res.id;
+    } catch (err) {
+      console.error('Failed to create template:', err);
+      return '';
+    }
+  },
+
+  updateTemplate: async (id, updates, tenantId) => {
+    const activeTenantId = tenantId || useTenantStore.getState().activeTenant?.id || '';
+    try {
+      await apiRequest(`/api/v1/templates/${id}`, {
+        method: 'PUT',
+        headers: { 'x-tenant-id': activeTenantId },
+        body: JSON.stringify({
+          name: updates.name,
+          entityType: updates.entityType,
+          layoutConfig: updates.layoutOrder ? { layoutOrder: updates.layoutOrder } : undefined,
+          themeConfig: updates.config,
+        }),
+      });
+
+      set((state) => ({
+        templates: state.templates.map((t) => {
           if (t.id === id) {
             return {
               ...t,
               ...updates,
               config: {
                 ...t.config,
-                ...(updates.config || {})
-              }
+                ...(updates.config || {}),
+              },
             };
           }
           return t;
-        });
-        return { templates: updated };
-      }),
-
-      deleteTemplate: (id) => set((state) => {
-        const templates = state.templates.filter((t) => t.id !== id);
-        // Adjust activeTemplateIds if the deleted one was active
-        const activeTemplateIds = { ...state.activeTemplateIds };
-        Object.entries(activeTemplateIds).forEach(([entityType, activeId]) => {
-          if (activeId === id) {
-            const fallback = templates.find((t) => t.entityType === entityType);
-            if (fallback) {
-              activeTemplateIds[entityType as TemplateEntityType] = fallback.id;
-            }
-          }
-        });
-        return { templates, activeTemplateIds };
-      }),
-
-      setDefaultTemplate: (entityType, id) => set((state) => ({
-        activeTemplateIds: {
-          ...state.activeTemplateIds,
-          [entityType]: id,
-        }
-      })),
-
-      resetTemplate: (entityType) => set((state) => {
-        // Find seeded template of this type
-        const seeded = seedTemplates.find(t => t.entityType === entityType);
-        if (!seeded) return {};
-        const templates = state.templates.map(t => {
-          if (t.entityType === entityType) {
-            const foundSeeded = seedTemplates.find(st => st.id === t.id);
-            if (foundSeeded) {
-              return { ...foundSeeded };
-            }
-            // For custom ones, revert config to defaultConfigs
-            return {
-              ...t,
-              config: { ...defaultConfigs[entityType] },
-              layoutOrder: entityType === 'INVOICE' 
-                ? [...defaultLayout] 
-                : defaultLayout.filter(b => b !== 'upi_qr' && (entityType !== 'SERVICE' || b !== 'signatures'))
-            };
-          }
-          return t;
-        });
-        return { templates };
-      }),
-
-      getTemplate: (idOrType) => {
-        const state = get();
-        // 1. If it matches a TemplateEntityType, fetch the active one
-        if (['QUOTATION', 'PURCHASE_ORDER', 'INVOICE', 'SERVICE'].includes(idOrType)) {
-          const type = idOrType as TemplateEntityType;
-          const activeId = state.activeTemplateIds[type];
-          const activeTemplate = state.templates.find(t => t.id === activeId);
-          if (activeTemplate) return activeTemplate;
-          const firstOfType = state.templates.find(t => t.entityType === type);
-          if (firstOfType) return firstOfType;
-        }
-        // 2. Fetch by ID
-        const template = state.templates.find(t => t.id === idOrType);
-        if (template) return template;
-
-        // 3. absolute fallbacks
-        const fallbackId = state.activeTemplateIds['QUOTATION'];
-        const fallbackTemplate = state.templates.find(t => t.id === fallbackId);
-        if (fallbackTemplate) return fallbackTemplate;
-
-        return state.templates[0];
-      }
-    }),
-    {
-      name: 'quotation-templates-storage-v2',
+        }),
+      }));
+    } catch (err) {
+      console.error('Failed to update template:', err);
     }
-  )
-);
+  },
+
+  deleteTemplate: async (id, tenantId) => {
+    const activeTenantId = tenantId || useTenantStore.getState().activeTenant?.id || '';
+    try {
+      await apiRequest(`/api/v1/templates/${id}`, {
+        method: 'DELETE',
+        headers: { 'x-tenant-id': activeTenantId },
+      });
+
+      const templates = get().templates.filter((t) => t.id !== id);
+      const activeTemplateIds = { ...get().activeTemplateIds };
+      Object.entries(activeTemplateIds).forEach(([entityType, activeId]) => {
+        if (activeId === id) {
+          const fallback = templates.find((t) => t.entityType === entityType);
+          if (fallback) {
+            activeTemplateIds[entityType as TemplateEntityType] = fallback.id;
+          }
+        }
+      });
+      set({ templates, activeTemplateIds });
+    } catch (err) {
+      console.error('Failed to delete template:', err);
+    }
+  },
+
+  setDefaultTemplate: (entityType, id) => set((state) => ({
+    activeTemplateIds: {
+      ...state.activeTemplateIds,
+      [entityType]: id,
+    }
+  })),
+
+  resetTemplate: (entityType) => {
+    // Client-only reset fallback
+    set((state) => {
+      const templates = state.templates.map((t) => {
+        if (t.entityType === entityType) {
+          return {
+            ...t,
+            config: { ...defaultConfigs[entityType] },
+            layoutOrder: entityType === 'INVOICE' 
+              ? [...defaultLayout] 
+              : defaultLayout.filter(b => b !== 'upi_qr' && (entityType !== 'SERVICE' || b !== 'signatures'))
+          };
+        }
+        return t;
+      });
+      return { templates };
+    });
+  },
+
+  getTemplate: (idOrType) => {
+    const state = get();
+    if (['QUOTATION', 'PURCHASE_ORDER', 'INVOICE', 'SERVICE'].includes(idOrType)) {
+      const type = idOrType as TemplateEntityType;
+      const activeId = state.activeTemplateIds[type];
+      const activeTemplate = state.templates.find(t => t.id === activeId);
+      if (activeTemplate) return activeTemplate;
+      const firstOfType = state.templates.find(t => t.entityType === type);
+      if (firstOfType) return firstOfType;
+    }
+    const template = state.templates.find(t => t.id === idOrType);
+    if (template) return template;
+
+    // Fallbacks
+    return {
+      id: 'fallback',
+      name: 'Default Fallback Theme',
+      entityType: 'QUOTATION',
+      layoutOrder: [...defaultLayout],
+      config: { ...defaultConfigs.QUOTATION },
+    };
+  }
+}));
+

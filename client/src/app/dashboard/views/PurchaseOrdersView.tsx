@@ -120,10 +120,15 @@ export default function PurchaseOrdersView() {
   const { can } = usePermissions();
   const { getActiveFieldsForEntity, fields } = useCustomFieldsStore();
   const { templates, activeTemplateIds } = useTemplatesStore();
-  const { customers } = useCustomersStore();
+  const { customers, fetchCustomers } = useCustomersStore();
 
-  const { orders: allOrders, addPurchaseOrder, updatePurchaseOrder, deletePurchaseOrder } = useDocumentStore();
+  const { orders: allOrders, fetchDocuments, addPurchaseOrder, updatePurchaseOrder, deletePurchaseOrder } = useDocumentStore();
   const [orders, setOrders] = useState<PurchaseOrderRecord[]>([]);
+
+  React.useEffect(() => {
+    fetchCustomers(activeTenant.id);
+    fetchDocuments(activeTenant.id);
+  }, [activeTenant.id, fetchCustomers, fetchDocuments]);
 
   React.useEffect(() => {
     setOrders(allOrders.filter(o => o.tenantId === activeTenant.id));

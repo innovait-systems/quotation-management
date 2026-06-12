@@ -116,10 +116,15 @@ export default function ServicesView() {
   const { can } = usePermissions();
   const userName = `${currentUser.firstName} ${currentUser.lastName}`;
   const { getActiveFieldsForEntity, fields } = useCustomFieldsStore();
-  const { customers } = useCustomersStore();
+  const { customers, fetchCustomers } = useCustomersStore();
 
-  const { services: allServices, addService, updateService } = useDocumentStore();
+  const { services: allServices, fetchDocuments, addService, updateService } = useDocumentStore();
   const [services, setServices] = useState<ServiceRecord[]>([]);
+
+  React.useEffect(() => {
+    fetchCustomers(activeTenant.id);
+    fetchDocuments(activeTenant.id);
+  }, [activeTenant.id, fetchCustomers, fetchDocuments]);
 
   React.useEffect(() => {
     setServices(allServices.filter(s => s.tenantId === activeTenant.id));

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTenantStore } from '../../../store/tenantStore';
 import { useCustomersStore, Customer } from '../../../store/customersStore';
 import StatCard from '../../../components/ui/StatCard';
@@ -13,7 +13,11 @@ import {
 
 export default function CustomersView() {
   const { activeTenant } = useTenantStore();
-  const { customers, addCustomer, updateCustomer, deleteCustomer } = useCustomersStore();
+  const { customers, fetchCustomers, addCustomer, updateCustomer, deleteCustomer } = useCustomersStore();
+
+  useEffect(() => {
+    fetchCustomers(activeTenant.id);
+  }, [activeTenant.id, fetchCustomers]);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCust, setSelectedCust] = useState<Customer | null>(null);

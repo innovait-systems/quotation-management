@@ -121,10 +121,15 @@ export default function InvoicesView() {
   const userName = `${currentUser.firstName} ${currentUser.lastName}`;
   const { getActiveFieldsForEntity, fields } = useCustomFieldsStore();
   const { templates, activeTemplateIds } = useTemplatesStore();
-  const { customers } = useCustomersStore();
+  const { customers, fetchCustomers } = useCustomersStore();
 
-  const { invoices: allInvoices, addInvoice, updateInvoice, deleteInvoice } = useDocumentStore();
+  const { invoices: allInvoices, fetchDocuments, addInvoice, updateInvoice, deleteInvoice } = useDocumentStore();
   const [invoices, setInvoices] = useState<InvoiceRecord[]>([]);
+
+  React.useEffect(() => {
+    fetchCustomers(activeTenant.id);
+    fetchDocuments(activeTenant.id);
+  }, [activeTenant.id, fetchCustomers, fetchDocuments]);
 
   React.useEffect(() => {
     setInvoices(allInvoices.filter(i => i.tenantId === activeTenant.id));

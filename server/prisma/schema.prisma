@@ -41,6 +41,7 @@ model Tenant {
   quotaLimits       TenantQuota?
   approvalTemplates ApprovalTemplate[]
   auditLogs         AuditLog[]
+  agreements        Agreement[]
 }
 
 enum SubscriptionPlan {
@@ -558,3 +559,36 @@ model AuditLog {
   userAgent   String?
   createdAt   DateTime   @default(now())
 }
+
+/// =========================================================================
+/// 10. AGREEMENTS & CONTRACTS SCHEMA
+/// =========================================================================
+
+model Agreement {
+  id              String             @id @default(uuid())
+  tenantId        String
+  tenant          Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  title           String
+  documentType    String             // e.g. "Agreement", "SLA Contract", "SOW Draft"
+  customerId      String
+  customerName    String
+  customerCompany String
+  description     String
+  status          String             // "DRAFT", "ACTIVE", "ARCHIVED", "EXPIRED"
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+  versions        AgreementVersion[]
+}
+
+model AgreementVersion {
+  id                String    @id @default(uuid())
+  agreementId       String
+  agreement         Agreement @relation(fields: [agreementId], references: [id], onDelete: Cascade)
+  versionLabel      String
+  changeDescription String
+  fileName          String
+  fileSize          String
+  uploadedBy        String
+  uploadedAt        DateTime  @default(now())
+}
+
