@@ -46,8 +46,8 @@ export class RbacGuard implements CanActivate {
       throw new ForbiddenException('Access Denied: Active user authentication context required.');
     }
 
-    // Verify user role matches requirements
-    const hasRole = requiredRoles.includes(user.role);
+    // Verify user role matches requirements (SUPER_ADMIN has global override access)
+    const hasRole = user.role === UserRole.SUPER_ADMIN || requiredRoles.includes(user.role);
     if (!hasRole) {
       throw new ForbiddenException(
         `Access Denied: Your role (${user.role}) lacks sufficient permissions. Required roles: ${requiredRoles.join(', ')}`,
